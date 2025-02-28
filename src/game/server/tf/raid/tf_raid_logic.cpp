@@ -33,7 +33,7 @@ ConVar tf_debug_sniper_spots( "tf_debug_sniper_spots", "0"/*, FCVAR_CHEAT*/ );
 
 
 ConVar tf_raid_max_wanderers( "tf_raid_max_wanderers", "20"/*, FCVAR_CHEAT*/ );
-ConVar tf_raid_max_defense_engineers( "tf_raid_max_defense_engineers", "6"/*, FCVAR_CHEAT*/ );
+ConVar tf_raid_max_defense_engineers( "tf_raid_max_defense_engineers", "4"/*, FCVAR_CHEAT*/ );
 ConVar tf_raid_max_defense_demomen( "tf_raid_max_defense_demomen", "1"/*, FCVAR_CHEAT*/ );
 ConVar tf_raid_max_defense_heavies( "tf_raid_max_defense_heavies", "1"/*, FCVAR_CHEAT*/ );
 ConVar tf_raid_max_defense_soldiers( "tf_raid_max_defense_soldiers", "1"/*, FCVAR_CHEAT*/ );
@@ -45,8 +45,8 @@ ConVar tf_raid_max_defense_squads( "tf_raid_max_defense_squads", "1"/*, FCVAR_CH
 
 ConVar tf_raid_wandering_density( "tf_raid_wandering_density", "0.00001", FCVAR_CHEAT, "Wandering defenders per unit area" );
 ConVar tf_raid_spawn_wanderers( "tf_raid_spawn_wanderers", "1"/*, FCVAR_CHEAT*/ );
-ConVar tf_raid_wandering_max_health("tf_raid_wandering_max_health", "100", FCVAR_CHEAT, "Wandering defenders max health");
-ConVar tf_raid_wandering_max_speed("tf_raid_wandering_max_speed", "100", FCVAR_CHEAT, "Wandering defenders max speed");
+ConVar tf_raid_wandering_max_health("tf_raid_wandering_max_health", "100",0 /*FCVAR_CHEAT*/, "Wandering defenders max health");
+ConVar tf_raid_wandering_max_speed("tf_raid_wandering_max_speed", "100", 0/*FCVAR_CHEAT*/, "Wandering defenders max speed");
 
 ConVar tf_raid_defender_density( "tf_raid_defender_density", "0.000001", 0/*FCVAR_CHEAT*/, "Wandering defenders per unit area" );
 ConVar tf_raid_max_defender_count( "tf_raid_max_defender_count", "18", 0/*FCVAR_CHEAT*/ );
@@ -73,7 +73,7 @@ ConVar tf_raid_spawn_mob_as_squad_chance_final( "tf_raid_spawn_mob_as_squad_chan
 ConVar tf_raid_squad_medic_intro_percent( "tf_raid_squad_medic_intro_percent", "0.5" ); // /*, FCVAR_CHEAT*/ );
 
 
-ConVar tf_raid_capture_mob_interval( "tf_raid_capture_mob_interval", "20"/*, FCVAR_CHEAT*/ );
+ConVar tf_raid_capture_mob_interval( "tf_raid_capture_mob_interval", "15"/*, FCVAR_CHEAT*/ );
 
 ConVar tf_raid_special_spawn_min_interval( "tf_raid_special_spawn_min_interval", "20"/*, FCVAR_CHEAT*/ );
 ConVar tf_raid_special_spawn_max_interval( "tf_raid_special_spawn_max_interval", "30"/*, FCVAR_CHEAT*/ );
@@ -982,7 +982,7 @@ bool CRaidLogic::SpawnSquad( CTFNavArea *spawnArea )
 	}
 
 	
-	//CTFBotSquad *squad = new CTFBotSquad;
+	CTFBotSquad *squad = new CTFBotSquad;
 	CTFBot *bot;
 
 	DevMsg( "RAID: %3.2f: <<<< Spawning Squad >>>>\n", gpGlobals->curtime );
@@ -995,7 +995,7 @@ bool CRaidLogic::SpawnSquad( CTFNavArea *spawnArea )
 		if ( !bot )
 			return false;
 
-		//bot->JoinSquad( squad );
+		bot->JoinSquad( squad );
 
 		DevMsg( "RAID: %3.2f: Squad member %s(%d)\n", gpGlobals->curtime, bot->GetPlayerName(), bot->entindex() );
 	}
@@ -1408,7 +1408,9 @@ void CRaidLogic::SpawnSpecials( CUtlVector< CTFNavArea * > *spawnAheadVector, CU
 
 		int whichClass = availableSpecialClassList[ RandomInt( 0, availableCount-1 ) ];
 
-		if ( whichClass == TF_CLASS_SNIPER )
+		//Not sure this actually matters snipers go to their sniper spots anyways.
+
+		/*if (whichClass == TF_CLASS_SNIPER)
 		{
 			CTFNavArea *homeArea = FindSniperSpawn();
 			if ( homeArea )
@@ -1426,7 +1428,7 @@ void CRaidLogic::SpawnSpecials( CUtlVector< CTFNavArea * > *spawnAheadVector, CU
 				}
 			}
 		}
-		else if ( spawnAheadVector && spawnAheadVector->Count() > 0 )
+		else*/ if ( spawnAheadVector && spawnAheadVector->Count() > 0 )
 		{
 			CTFNavArea *where = spawnAheadVector->Element( RandomInt( 0, spawnAheadVector->Count()-1 ) );
 
