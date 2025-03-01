@@ -1,0 +1,21 @@
+//
+// vs 3.0   ps 3.0   shaders collection
+//
+//  These shaders are forced to compile as shader model 3.0
+//  using the new compiler.
+//	    _ps30.vcs
+//	    _vs30.vcs
+//
+
+// There are no examples of such shaders in the SDK, but add yours here.
+
+// All shaders use this
+pbr_comb_vs30.fxc
+
+// 1-5 & 11 shaders
+pbr_mrao_brush_ps30.fxc
+pbr_spec_brush_ps30.fxc
+pbr_mrao_model_ps30.fxc
+pbr_spec_model_ps30.fxc
+pbr_spec_override_ps30.fxc
+pbr_mrao_debug_ps30.fxc

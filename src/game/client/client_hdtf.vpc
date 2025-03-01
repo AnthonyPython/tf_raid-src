@@ -1,0 +1,405 @@
+//-----------------------------------------------------------------------------
+//	CLIENT_HDTF.VPC
+//
+//	Project Script
+//-----------------------------------------------------------------------------
+
+$Macro SRCDIR		"..\.."
+$Macro GAMENAME 	"episodic" [!$SOURCESDK]
+$Macro GAMENAME 	"hdtf" [$SOURCESDK]
+
+$Include "$SRCDIR\game\client\client_base.vpc"
+
+$Configuration
+{
+	$Compiler
+	{
+		$AdditionalIncludeDirectories	".\hdtf;.\mapbase;.\hl2;.\hl2\elements;$SRCDIR\game\shared\hdtf;$SRCDIR\game\shared\hl2;$SRCDIR\game\shared\episodic;..\..\public;$BASE;$SRCDIR\fmod_studio\api\core\inc;$SRCDIR\fmod_studio\api\studio\inc"
+		$PreprocessorDefinitions		"$BASE;HL2_CLIENT_DLL;HL2_EPISODIC;HDTF;HDTF_CLIENT;HDTF_SINGLEPLAYER;SOURCE_2013;GLOWS_ENABLE;SDK2013CE"
+	}
+	
+	$Linker
+	{
+		$AdditionalLibraryDirectories			"$SRCDIR\fmod\api\lib"
+	}
+	
+	// NOTE(wheatley): for some reason some required commands are missing on other machines.
+	// 				   Disabled for the time being.
+	//$PreBuildEvent
+	//{
+	//	$CommandLine		"$BASE" "echo Generating revision header file." "\n" \
+	//						"..\..\devtools\generate_rev_header.bat"
+	//}
+}
+
+$Project "Client (HDTF)"
+{
+	$Folder	"Source Files"
+	{
+		$File	"hud_chat.cpp"
+		$File	"c_team_objectiveresource.cpp"
+		$File	"c_team_objectiveresource.h"
+
+		$Folder "HDTF"
+		{
+			$Folder "DiscordRPC" [$WIN32]
+			{
+				$File "DiscordRPC\discord_rpc.cpp"
+				$File "DiscordRPC\discord_rpc.h"
+				$File "$SRCDIR\game\shared\DiscordRPC\discord_rpc_shared.cpp"
+				$File "$SRCDIR\game\shared\DiscordRPC\discord_rpc_shared.h"
+			}
+			
+			$Folder "Mapbase" 
+			{
+				$File "mapbase\c_point_glow.cpp"
+				$File	"c_movie_display.cpp"
+				$File	"c_movie_display.h"
+				$File	"vgui_movie_display.cpp"
+				$File	"c_baselesson.cpp"
+				$File	"c_baselesson.h"
+				$File	"c_gameinstructor.cpp"
+				$File	"c_gameinstructor.h"
+				$File	"hud_locator_target.cpp"
+				$File	"hud_locator_target.h"
+			}
+			
+			$Folder "Shader Editor" [$WIN32]
+			{
+				$Folder	"Header Files"
+				{
+					$File	"$SRCDIR\game\client\ShaderEditor\ISEdit_ModelRender.h"
+					$File	"$SRCDIR\game\client\ShaderEditor\IVShaderEditor.h"
+					$File	"$SRCDIR\game\client\ShaderEditor\ShaderEditorSystem.h"
+					$File	"$SRCDIR\game\client\ShaderEditor\SEdit_ModelRender.h"
+					//$File	"$SRCDIR\game\client\ShaderEditor\Grass\CGrassCluster.h"
+				}
+		
+				$Folder	"Implementation Files"
+				{
+					$File	"$SRCDIR\game\client\ShaderEditor\ShaderEditorSystem.cpp"
+					$File	"$SRCDIR\game\client\ShaderEditor\SEdit_ModelRender.cpp"
+					//$File	"$SRCDIR\game\client\ShaderEditor\Grass\CGrassCluster.cpp"
+				}
+			}
+			
+			$Folder "Fmod_shared"
+			{
+				$File "$SRCDIR\game\shared\fmod_entity\logic_fmod_shared.cpp"
+				$File "$SRCDIR\game\shared\fmod_entity\logic_fmod_shared.h"
+			}
+			
+			$File 	"$SRCDIR\game\shared\hdtf\achievements_hdtf.cpp"
+			$File	"hdtf\c_hdtf_player.cpp"
+			$File	"hdtf\c_hdtf_player.h"
+			$File	"hdtf\shaderapihack.h"
+			$File	"$SRCDIR\game\shared\hdtf\hdtf_boss.cpp"
+			$File	"$SRCDIR\game\shared\hdtf\hdtf_boss.h"
+			$File	"$SRCDIR\game\shared\hdtf\hdtf_gamemovement.cpp"
+			$File	"$SRCDIR\game\shared\hdtf\hdtf_gamemovement.h"
+			$File	"$SRCDIR\game\shared\hdtf\hdtf_gamerules.cpp"
+			$File	"$SRCDIR\game\shared\hdtf\hdtf_gamerules.h"
+			$File	"$SRCDIR\game\shared\hdtf\hdtf_player_shared.cpp"
+			$File	"$SRCDIR\game\shared\hdtf\hdtf_player_shared.h"
+			$File	"hdtf\hud_bosshealth.cpp"
+			$File	"hdtf\hud_inventory.h"
+			$File	"hdtf\hud_inventory.cpp"
+			$File	"hdtf\inventoryammo.cpp"
+			$File	"hdtf\inventoryammo.h"
+			$File	"hdtf\inventoryslot.cpp"
+			$File	"hdtf\inventoryslot.h"
+			$File	"$SRCDIR\game\shared\hdtf\laser_dot.cpp"
+			$File	"$SRCDIR\game\shared\hdtf\laser_dot.h"
+			$File	"hdtf\util.cpp"
+			$File	"hdtf\util.h"
+			$File	"$SRCDIR\game\shared\hdtf\singleplayer_animstate.cpp"
+			$File	"$SRCDIR\game\shared\hdtf\singleplayer_animstate.h"
+			$File	"hdtf\c_npc_zombieboss.cpp"
+			$File	"hdtf\c_npc_manblower.cpp"
+			$File	"hdtf\hud_target_id.cpp"
+			$File	"hdtf\fx_hdtf_tracers.cpp"
+			
+			$File	"hdtf\c_env_snipercanister.cpp"
+			$File	"$SRCDIR\game\shared\hdtf\env_snipercanister_shared.cpp"
+			$File	"$SRCDIR\game\shared\hdtf\env_snipercanister_shared.h"
+
+			$File	"hdtf\hud_chapter.cpp"
+			
+			$File	"hdtf\vgui_keypad.cpp"
+			$File	"hdtf\vgui_keypad.h"
+			
+			$File	"$SRCDIR\game\shared\hdtf\hdtf_parkour_controller.cpp"
+			$File	"$SRCDIR\game\shared\hdtf\hdtf_parkour_controller.h"
+			
+			//FMOD stuff
+			$File "hdtf\hdtf_fmod_manager.cpp"
+			$File "hdtf\hdtf_fmod_manager.h"
+			
+			// Vehicles
+			$File	"hdtf\c_vehicle_motorcycle.cpp"
+			$File	"hdtf\c_vehicle_hammer.cpp"
+			
+			// Weapons - common
+			$File	"$SRCDIR\game\shared\hdtf\weapon_basehdtfcombat.cpp"
+			$File	"$SRCDIR\game\shared\hdtf\weapon_basehdtfcombat.h"
+			$File	"$SRCDIR\game\shared\hdtf\weapon_basemachinegun.cpp"
+			$File	"$SRCDIR\game\shared\hdtf\weapon_basemachinegun.h"
+			$File	"$SRCDIR\game\shared\hdtf\weapon_basemelee.cpp"
+			$File	"$SRCDIR\game\shared\hdtf\weapon_basemelee.h"
+			$File	"hdtf\hdtf_viewmodel_arms.cpp"
+			$File	"hdtf\hdtf_viewmodel_arms.h"
+
+			// Weapons - unused
+			$File	"$SRCDIR\game\shared\hdtf\weapon_alyxgun.cpp"
+			$File	"$SRCDIR\game\shared\hdtf\weapon_alyxgun.h"
+			$File	"$SRCDIR\game\shared\hdtf\weapon_cubemap.cpp"
+			$File	"$SRCDIR\game\shared\hdtf\weapon_physcannon.cpp"
+			$File	"$SRCDIR\game\shared\hdtf\weapon_physcannon.h"
+			$File	"$SRCDIR\game\shared\hdtf\weapon_rpg.cpp"
+			$File	"$SRCDIR\game\shared\hdtf\weapon_rpg.h"
+			$File	"hl2\c_weapon_stunstick.cpp"
+
+			// Slot 1 - melee
+			$File	"$SRCDIR\game\shared\hdtf\weapon_knife.cpp"
+			$File	"$SRCDIR\game\shared\hdtf\weapon_machete.cpp"
+			$File	"$SRCDIR\game\shared\hdtf\weapon_axe.cpp"
+			$File	"$SRCDIR\game\shared\hdtf\weapon_crowbar.cpp"
+			$File	"$SRCDIR\game\shared\hdtf\weapon_parkour.cpp"
+			$File	"$SRCDIR\game\shared\hdtf\weapon_parkour.h"
+			$File	"$SRCDIR\game\shared\hdtf\weapon_wrench.cpp"
+			$File	"$SRCDIR\game\shared\hdtf\weapon_spooky_machete.cpp"
+
+			// Slot 2 - pistols
+			$File	"$SRCDIR\game\shared\hdtf\weapon_m9.cpp"
+			$File	"$SRCDIR\game\shared\hdtf\weapon_1911.cpp"
+			$File	"$SRCDIR\game\shared\hdtf\weapon_fuddgun.cpp"
+			$File	"$SRCDIR\game\shared\hdtf\weapon_magnum.cpp"
+			$File	"$SRCDIR\game\shared\hdtf\weapon_roulette.cpp"
+
+			// Slots 3 and 4 - submachine guns, rifles, shotguns
+			$File	"$SRCDIR\game\shared\hdtf\weapon_m16.cpp"
+			$File	"$SRCDIR\game\shared\hdtf\weapon_m16_carbine.cpp"
+			$File	"$SRCDIR\game\shared\hdtf\weapon_hk33.cpp"
+			$File	"$SRCDIR\game\shared\hdtf\weapon_sig552.cpp"
+			$File	"$SRCDIR\game\shared\hdtf\weapon_ak47.cpp"
+			$File	"$SRCDIR\game\shared\hdtf\weapon_mp5.cpp"
+			$File	"$SRCDIR\game\shared\hdtf\weapon_mosin.cpp"
+			$File	"$SRCDIR\game\shared\hdtf\weapon_remington.cpp"
+			$File	"$SRCDIR\game\shared\hdtf\weapon_pump.cpp"
+			$File	"$SRCDIR\game\shared\hdtf\weapon_doublebarrel.cpp"
+			$File	"$SRCDIR\game\shared\hdtf\weapon_m240.cpp"
+			$File	"$SRCDIR\game\shared\hdtf\weapon_oneshotbarrel.cpp"
+			$File	"$SRCDIR\game\shared\hdtf\weapon_hl2pistol.cpp"
+			$File	"$SRCDIR\game\shared\hdtf\weapon_skorpion.cpp"
+			$File	"$SRCDIR\game\shared\hdtf\weapon_tmp.cpp"
+			$File	"$SRCDIR\game\shared\hdtf\weapon_minigun.cpp"
+			$File	"$SRCDIR\game\shared\hdtf\weapon_awp.cpp"
+			$File	"$SRCDIR\game\shared\weapon_shotgun.cpp"
+
+			// Slot 5 - explosives
+			$File	"$SRCDIR\game\shared\hdtf\weapon_grenade.cpp"
+			$File	"$SRCDIR\game\shared\hdtf\weapon_molotov.cpp"
+			$File	"$SRCDIR\game\shared\hdtf\weapon_claymore.cpp"
+			$File	"$SRCDIR\game\shared\hdtf\weapon_m67.cpp"
+
+			// Slot 6 - utilities
+			$File	"$SRCDIR\game\shared\hdtf\weapon_gasmask.cpp"
+			$File	"$SRCDIR\game\shared\hdtf\weapon_nightvision.cpp"
+			$File	"$SRCDIR\game\shared\hdtf\weapon_binoculars.cpp"
+			$File	"$SRCDIR\game\shared\hdtf\weapon_flare.cpp"
+			$File	"$SRCDIR\game\shared\hdtf\weapon_map.cpp"
+			$File	"$SRCDIR\game\shared\hdtf\weapon_painkillers.cpp"
+
+			// NPC weapons
+			$File	"hdtf\c_weapon__stubs_hdtf.cpp"
+			
+			// Scope Render Target files
+			$File	"hdtf\hdtf_scope_rt.cpp"
+			$File	"hdtf\hdtf_scope_rt.h"
+			$File	"hdtf\hdtf_scope_proxy.cpp"
+			
+			// HUD elements and panels
+			$File	"hdtf\hud_nvg_overlay.cpp"
+			$File	"hdtf\hud_gaskmask_overlay.cpp"
+			$File	"hdtf\hud_binoculars_overlay.cpp"
+			$File	"hdtf\inventorybutton.cpp"
+			$File	"hdtf\inventorybutton.h"
+			$File	"hdtf\inventoryitemicon.cpp"
+			$File	"hdtf\inventoryitemicon.h"
+			$File	"hdtf\hdtf_cutscene_ui.cpp"
+			$File	"hdtf\hdtf_cutscene_ui.h"
+			$File	"hdtf\hud_countdown.cpp"
+			
+			// PBRUI
+			$File	"hdtf\pbrui.cpp"
+
+			$File "$SRCDIR\game\shared\hdtf\util\os_utils.h"
+			$File "$SRCDIR\game\shared\hdtf\util\os_utils.cpp"
+			{
+				$Configuration
+				{
+					$Compiler
+					{
+						$Create/UsePrecompiledHeader	"Not Using Precompiled Headers"
+					}
+				}
+			}
+			$File "$SRCDIR\game\shared\hdtf\engine_patch.h"
+			$File "$SRCDIR\game\shared\hdtf\engine_patch.cpp"
+			{
+				$Configuration
+				{
+					$Compiler
+					{
+						$Create/UsePrecompiledHeader	"Not Using Precompiled Headers"
+					}
+				}
+			}
+			
+			// GameUI override
+			$Folder "GameUI"
+			{
+				$File	"hdtf\GameUI\hdtf_ui.cpp"
+				$File	"hdtf\GameUI\hdtf_ui.h"
+				$File	"hdtf\GameUI\hdtf_ui_interface.cpp"
+				$File	"hdtf\GameUI\hdtf_ui_interface.h"
+				$File	"hdtf\GameUI\tga_image_panel.cpp"
+				$File	"hdtf\GameUI\tga_image_panel.h"
+				$File	"hdtf\GameUI\ui_loading.cpp"
+				$File	"hdtf\GameUI\ui_loading.h"
+				$File	"hdtf\GameUI\ui_mainmenu.cpp"
+				$File	"hdtf\GameUI\ui_mainmenu.h"
+				$File	"hdtf\GameUI\ui_mainmenu_loadgame.cpp"
+				$File	"hdtf\GameUI\ui_mainmenu_loadgame.h"
+				$File	"hdtf\GameUI\ui_mainmenu_main.cpp"
+				$File	"hdtf\GameUI\ui_mainmenu_main.h"
+				$File	"hdtf\GameUI\ui_mainmenu_newgame.cpp"
+				$File	"hdtf\GameUI\ui_mainmenu_newgame.h"
+				$File	"hdtf\GameUI\ui_mainmenu_options.cpp"
+				$File	"hdtf\GameUI\ui_mainmenu_options.h"
+				$File	"hdtf\GameUI\ui_mainmenu_savegame.cpp"
+				$File	"hdtf\GameUI\ui_mainmenu_savegame.h"
+				$File	"hdtf\GameUI\ui_menu_button.cpp"
+				$File	"hdtf\GameUI\ui_menu_button.h"
+				$File	"hdtf\GameUI\ui_menu_canvas.h"
+				$File	"hdtf\GameUI\ui_menu_popup.cpp"
+				$File	"hdtf\GameUI\ui_menu_popup.h"
+				$File	"hdtf\GameUI\ui_pausemenu.cpp"
+				$File	"hdtf\GameUI\ui_pausemenu.h"
+				$File	"hdtf\GameUI\ui_pausemenu_main.cpp"
+				$File	"hdtf\GameUI\ui_pausemenu_main.h"
+				$File	"hdtf\GameUI\ui_version_overlay.h"
+				$File	"hdtf\GameUI\ui_version_overlay.cpp"
+				$File	"hdtf\GameUI\ui_image_button.h"
+				$File	"hdtf\GameUI\ui_image_button.cpp"
+				$File	"hdtf\GameUI\ui_layout_builder.h"
+				$File	"hdtf\GameUI\ui_linear_layout.h"
+				$File	"hdtf\GameUI\ui_linear_layout.cpp"
+			}
+		}
+
+		$Folder	"Game_controls"
+		{
+		$File "$SRCDIR\game\client\game_controls\FloatSlider.h"
+		$File "$SRCDIR\vgui2\game_controls\FloatSlider.cpp"
+		}
+
+		$Folder	"HL2 DLL"
+		{
+			$File	"$SRCDIR\game\shared\hl2\basehlcombatweapon_shared.cpp"
+			$File	"$SRCDIR\game\shared\hl2\basehlcombatweapon_shared.h"
+			$File	"$SRCDIR\game\shared\episodic\achievements_ep1.cpp"
+			$File	"$SRCDIR\game\shared\episodic\achievements_ep2.cpp"
+			$File	"$SRCDIR\game\shared\episodic\achievements_epx.cpp"
+			$File	"hl2\c_antlion_dust.cpp"
+			$File	"hl2\c_ar2_explosion.cpp"
+			$File	"hl2\c_barnacle.cpp"
+			$File	"hl2\c_barney.cpp"
+			$File	"hl2\c_basehelicopter.cpp"
+			$File	"hl2\c_basehelicopter.h"
+			$File	"hl2\c_basehlcombatweapon.cpp"
+			$File	"hl2\c_basehlcombatweapon.h"
+			$File	"hl2\c_basehlplayer.cpp"
+			$File	"hl2\c_basehlplayer.h"
+			$File	"hl2\c_citadel_effects.cpp"
+			$File	"hl2\c_corpse.cpp"
+			$File	"hl2\c_corpse.h"
+			$File	"hl2\c_env_alyxtemp.cpp"
+			$File	"hl2\c_env_headcrabcanister.cpp"
+			$File	"hl2\c_env_starfield.cpp"
+			//$File	"hl2\c_energy_wave.cpp"
+			$File	"hl2\c_func_tankmortar.cpp"
+			$File	"hl2\c_hl2_playerlocaldata.cpp"
+			$File	"hl2\c_hl2_playerlocaldata.h"
+			$File	"hl2\c_info_teleporter_countdown.cpp"
+			$File	"hl2\c_npc_antlionguard.cpp"
+			$File	"hl2\c_npc_combinegunship.cpp"
+			$File	"hl2\c_npc_manhack.cpp"
+			$File	"hl2\c_npc_rollermine.cpp"
+			$File	"hl2\c_plasma_beam_node.cpp"
+			$File	"hl2\c_prop_combine_ball.cpp"
+			$File	"hl2\c_prop_combine_ball.h"
+			$File	"episodic\c_prop_scalable.cpp"
+			$File	"hl2\c_rotorwash.cpp"
+			$File	"hl2\c_script_intro.cpp"
+			$File	"$SRCDIR\game\shared\script_intro_shared.cpp"
+			$File	"hl2\c_strider.cpp"
+			$File	"hl2\c_te_concussiveexplosion.cpp"
+			$File	"hl2\c_te_flare.cpp"
+			$File	"hl2\c_thumper_dust.cpp"
+			$File	"hl2\c_vehicle_airboat.cpp"
+			$File	"hl2\c_vehicle_cannon.cpp"
+			$File	"hl2\c_vehicle_crane.cpp"
+			$File	"hl2\c_vehicle_crane.h"
+			$File	"episodic\c_vehicle_jeep_episodic.cpp"
+			$File	"hl2\c_vehicle_prisoner_pod.cpp"
+			$File	"episodic\c_vort_charge_token.cpp"
+			$File	"$SRCDIR\game\shared\hl2\citadel_effects_shared.h"
+			$File	"hl2\clientmode_hlnormal.cpp"
+			$File	"hl2\clientmode_hlnormal.h"
+			$File	"death.cpp"
+			$File	"$SRCDIR\game\shared\hl2\env_headcrabcanister_shared.cpp"
+			$File	"$SRCDIR\game\shared\hl2\env_headcrabcanister_shared.h"
+			$File	"$SRCDIR\game\shared\episodic\npc_advisor_shared.h"
+			$File	"episodic\c_npc_advisor.cpp"
+			$File	"episodic\episodic_screenspaceeffects.cpp"
+			$File	"episodic\episodic_screenspaceeffects.h"
+			$File	"episodic\flesh_internal_material_proxy.cpp"
+			$File	"hl2\fx_antlion.cpp"
+			$File	"hl2\fx_bugbait.cpp"
+			$File	"hl2\fx_hl2_impacts.cpp"
+			$File	"hl2\fx_hl2_tracers.cpp"
+			$File	"hl2\hl2_clientmode.cpp"
+			$File	"$SRCDIR\game\shared\hl2\hl2_gamerules.cpp"
+			$File	"$SRCDIR\game\shared\hl2\hl2_gamerules.h"
+			$File	"$SRCDIR\game\shared\hl2\hl2_shareddefs.h"
+			$File	"$SRCDIR\game\shared\hl2\hl2_usermessages.cpp"
+			$File	"$SRCDIR\game\shared\hl2\hl_gamemovement.cpp"
+			$File	"$SRCDIR\game\shared\hl2\hl_gamemovement.h"
+			$File	"hl2\hl_in_main.cpp"
+			$File	"hl2\hl_prediction.cpp"
+			$File	"hl2\hud_ammo.cpp"
+			$File	"hl2\hud_battery.cpp"
+			$File	"hl2\hud_blood.cpp"
+			$File	"hl2\hud_credits.cpp"
+			$File	"hl2\hud_damageindicator.cpp"
+			$File	"hl2\hud_flashlight.cpp"
+			$File	"hl2\hud_locator.cpp"
+			$File	"hl2\hud_health.cpp"
+			$File	"hl2\hud_poisondamageindicator.cpp"			
+			$File	"hud_posture.cpp"
+			$File	"hl2\hud_quickinfo.cpp"
+			$File	"hl2\hud_radar.cpp"
+			$File	"hl2\hud_radar.h"
+			$File	"hud_squadstatus.cpp"
+			$File	"hl2\hud_suitpower.cpp"
+			$File	"hl2\hud_suitpower.h"
+			$File	"hl2\hud_weaponselection.cpp"
+			$File	"hl2\hud_zoom.cpp"
+			$File	"hl2\shieldproxy.cpp"
+			$File	"hl2\vgui_rootpanel_hl2.cpp"
+			$File	"episodic\c_npc_puppet.cpp"
+			$File	"$SRCDIR\game\shared\hl2\weapon_smg1.cpp"
+		}
+	}
+}

@@ -1,0 +1,373 @@
+// shadertype=hlsl
+//========= ShiroDkxtro2's --ACROHS Ultimate Shaders Project-- ============//
+//
+//	Initial D.	:	21.03.2023 DMY
+//	Last Change :	02.04.2023 DMY
+//
+//	Purpose of this File :	PBR Shader ps30, to be used on Brushes
+//
+//===========================================================================//
+
+// STATIC:	"FLASHLIGHT"				"0..1"
+// STATIC:	"DETAILTEXTURE"				"0..1"
+// STATIC:	"EMISSION"					"0..1"
+// STATIC:	"SPECIALPROPERTIES"			"0..1"
+// STATIC:	"PCC"						"0..1"
+// STATIC:	"PARALLAXINTERVAL"			"0..1"
+
+// DYNAMIC: "WRITEWATERFOGTODESTALPHA"  "0..1"
+// DYNAMIC: "PIXELFOGTYPE"              "0..1"
+// DYNAMIC: "WRITE_DEPTH_TO_DESTALPHA"  "0..1"
+// DYNAMIC: "FLASHLIGHTSHADOWS"         "0..1"
+
+// Set to 0 if you are NOT on ACROHS
+// DYNAMIC: "CASCADED_SHADOW"			"0..0"
+
+// No Cubemap = No PCC
+// SKIP:	$FLASHLIGHT && $PCC
+// No Emission = No Emission(?)
+// SKIP:	$FLASHLIGHT				&&	$EMISSION
+// All our glowing materials are >525°C. They cannot be wet. ( Incandescence )
+// Water touching the emissive materials would instantly vaporize ( and an explosion occuros )
+// Therefore we removed this combo. For the safety of the player. ( Its unlikely to happen because rocks don't glow )
+// SKIP:	$EMISSION				&&	$SPECIALPROPERTIES
+// We require the Detail_Texture Sampler for our VectorLayering, the constants too.
+// SKIP:	$SPECIALPROPERTIES		&&	$DETAILTEXTURE
+
+// SKIP: $CASCADED_SHADOW && $FLASHLIGHT
+// Can't write fog to alpha if there is no fog
+// SKIP: ($PIXELFOGTYPE == 0) && ($WRITEWATERFOGTODESTALPHA != 0)
+// We don't care about flashlight depth unless the flashlight is on
+// SKIP: ( $FLASHLIGHT == 0 ) && ( $FLASHLIGHTSHADOWS == 1 )
+
+//===========================================================================//
+//	Include Files ( and with them, function declarations )
+//===========================================================================//
+
+// This is used to disable features automatically.
+#include "ACROHS_Defines.h"
+
+// This IS a Shader used on BRUSHES
+#define BRUSH
+
+// This Shaders USES Normalmaps
+#define NORMALTEXTURE
+
+// This should enable Envmapping behaviour.
+#define ENVMAPMODE 1
+
+//	This has to be included first. It includes pragmas, #define's, and the register map.
+#include "lux_common_ps_fxc.h"
+// Lightmapping related functions
+#include "lux_common_lightmapped.h"
+// SelfIllum Data
+#include "lux_common_selfillum.h"
+// EnvMapping Data
+#include "lux_common_envmap.h"
+// common flashlight function.
+#include "lux_common_flashlight.h"
+
+#if PARALLAXINTERVAL
+#include "lux_common_parallax.h"
+#endif
+
+#include "pbr_combined_functions.h"
+
+//===========================================================================//
+//	Everything Vertex Shader is outputting, enters here
+//===========================================================================//
+struct PS_INPUT
+{
+    float4	BaseDetailTexCoord		:	TEXCOORD0;
+	float4	NormalEMMTexCoord		:	TEXCOORD1;
+	float3	WorldNormal				:	TEXCOORD2;
+	float3	WorldPos				:	TEXCOORD3;
+	float3	ProjPos					:	TEXCOORD4;
+	float4	LightmapTexCoord1And2	:	TEXCOORD5;
+	float4	LightmapTexCoord3		:	TEXCOORD6;
+};
+
+float4 main(PS_INPUT i) : COLOR
+{
+	//	Getting our PS_INPUT... TODO/FIXME: Does this require more memory?
+	//===========================================================================//
+	// Integer Constants are for use with loops only...
+	int iDetailBlendMode = trunc(f1DetailBlendMode);
+	int iDebug			 = trunc(g_VariousControls1.x);
+	float LOD			 = g_VariousControls1.y;
+
+	// int g_Debug = trunc(DEBUG.x);
+
+	float3 f3BaseTextureUV = float3(i.BaseDetailTexCoord.xy, 0.0f);
+
+	// Always need it.
+	float3 f3NormalUV =  float3(i.NormalEMMTexCoord.xy, 0.0f);
+
+	#if DETAILTEXTURE
+	float3 f3DetailTextureUV = float3(i.BaseDetailTexCoord.zw, 0.0f);
+	#endif
+
+	// .xyz's in case we need to pack something later
+	float3 f3WorldPosition		= i.WorldPos.xyz;
+	float3 f3ProjectPosition	= i.ProjPos.xyz;
+	float4 f4LightmapUV1		= i.LightmapTexCoord1And2;
+	float4 f4LightmapUV2		= i.LightmapTexCoord3;
+
+	// ShiroDkxtro2 :	We do this like the PBR Shader.
+	//					Tottery says this causes issues on smoothed models.
+	//					However, it means we can receive more things from the Vertex Shader
+	//					And I have not noticed any of such Issues.
+	float3 f3FaceNormal = normalize(i.WorldNormal);
+	float3 f3WorldNormal = f3FaceNormal;
+    float3 f3SurfaceTangent;
+    float3 f3SurfaceBase; 
+    float f1FlipSign;
+    float3x3 f3x3NormalBasis = Compute_Tangent_Frame(f3FaceNormal, f3WorldPosition, f3NormalUV.xy , f3SurfaceTangent, f3SurfaceBase, f1FlipSign);
+	float3	f3ViewVector = normalize(g_EyePos.xyz - f3WorldPosition); // Lo
+
+//////////////////////////////////////////////////////////////////////////////////////////
+//								PARALLAX INTERVAL MAPPING								//
+//////////////////////////////////////////////////////////////////////////////////////////
+//	f1ParallaxHeight	
+//	f1ParallaxMaxOffset	
+//	f1ParallaxIntensity	
+//	f1ParallaxInterval
+#if PARALLAXINTERVAL
+	float3 f3RelativeViewDirection	=	float3(	dot(f3ViewVector, f3SurfaceTangent),	dot(f3ViewVector, f3SurfaceBase),	dot(f3ViewVector, f3FaceNormal));
+
+// POM
+float2 Offset = OffsetCoordinates(f3BaseTextureUV.xy, f3RelativeViewDirection, Sampler_NormalTexture, f1ParallaxHeight, f1ParallaxMaxOffset);
+
+// PIM
+// float2 Offset = GetParallaxOffset(f3RelativeViewDirection, f1ParallaxHeight, f1ParallaxMaxOffset, Sampler_NormalTexture, f3BaseTextureUV.xy);
+
+f3NormalUV.xy += Offset;
+f3BaseTextureUV.xy += Offset; 
+#endif
+
+	//===========================================================================//
+	//	Getting the current Pixels Color from the Samplers
+	//===========================================================================//
+
+	float4	f4BaseTexture		=	tex2D(Sampler_BaseTexture, f3BaseTextureUV.xy);	
+	float4	f4NormalTexture		=	tex2D(Sampler_NormalTexture, f3NormalUV.xy);	
+	float4	f4MRAO				=	tex2D(Sampler_MRAO, f3BaseTextureUV.xy);
+	f4BaseTexture.xyz		   *=	f3BaseTextureTint;
+
+	// Set up MRAO terms :
+			f4MRAO.x			=	clamp(f4MRAO.x + f1MetallicBias	   ,0.0f ,1.0f); // evil leveling
+			f4MRAO.y			=	clamp(f4MRAO.y + f1RoughnessBias   ,0.0f ,1.0f); // evil leveling
+			f4MRAO.z			=	clamp(f4MRAO.z + f1AOBias		   ,0.0f ,1.0f); // evil leveling
+	float	f1Metalness			=	f4MRAO.x;
+	float	f1Roughness			=	f4MRAO.y;
+	float	f1AmbientOcclusion	=	f4MRAO.z;
+	float3	f3Specular			=	lerp(f1DiElectricCoefficient.xxx, f4BaseTexture.rgb, f1Metalness); // ( DiElectricCoefficient  default is 0.025 now )
+	float3	f3Albedo			=	f4BaseTexture.xyz * ( 1.0f - f1Metalness );
+//			f3Albedo		   *=	PI; // No PI on brushes.
+//	Wetness And Porisity modifaction for input textures.
+//	Adapted from Uncharted TechArt pdf
+//	https://advances.realtimerendering.com/other/2016/naughty_dog/NaughtyDog_TechArt_Final.pdf
+//	VectorLayer is our own implementation!
+#if SPECIALPROPERTIES
+
+// FIXME:	f4NormalTexture.xy is probably calculated incorrectly.
+//			In the pdf they do float2 but this kind of implies they only want to modify two components... doesn't it?
+
+float4	f4PropertiesTexture		=	tex2D(Sampler_Properties , f3BaseTextureUV.xy);
+float	f1Wetness				=	f4PropertiesTexture.x;
+float	f1Porosity				=	f4PropertiesTexture.y;
+float	f1VectorBlendMask		=	f4PropertiesTexture.z;
+float	f1VectorLayerRoughness	=	f4PropertiesTexture.w;
+float4	f4VectorLayerTexture	=	tex2D(Sampler_VectorLayer , f3BaseTextureUV.xy); // Uses the same sampler as the detailtexture
+float3	f3VectorLayerTexture	=	f4VectorLayerTexture.xyz;
+float	f1VectorLayerAO			=	f4VectorLayerTexture.w;
+float	f1VectorBlend			=	0.0f;
+if(bVectorBlend)
+{
+	// We clamp the dot at 0. If the Normal and Desired is -1 they will return 1.0f. Otherwise only positive values will persist.
+	f1VectorBlend				=	max(0.0f, dot(f3DesiredVector, f3WorldNormal)); // If they are the same. 1.0f, slowly progressing there...
+	f1VectorBlend				=	smoothstep(f1VectorLayerFactor, 1.0f, f1VectorBlend); // Only 0.3 difference... Otherwise you will have a smooth falloff... Which we don't want.
+	f1VectorBlend				*=	f1VectorBlendMask; // f1VectorLayerFactor = artist input
+
+	f3Albedo					=	lerp(f3Albedo			,f3VectorLayerTexture		, f1VectorBlend);
+	f1Roughness					=	lerp(f1Roughness		,f1VectorLayerRoughness		, f1VectorBlend);
+	f3Specular					=	lerp(f3Specular			,float3(0.0f, 0.0f, 0.0f)	, f1VectorBlend);
+	f1AmbientOcclusion			=	lerp(f1AmbientOcclusion	,f1VectorLayerAO			, f1VectorBlend);
+}
+
+if(bWetnessPorosity)
+{
+		f1Wetness				=	clamp(f1Wetness + f1WetnessBias, 0.0f , 1.0f); // evil leveling
+float3	f3SaturatedAlbedo		=	f3Albedo * f3Albedo; // Square
+		f3Albedo				=	lerp(f3Albedo			, f3SaturatedAlbedo	, ClampRange(f1Wetness, 0.00f, 0.35f) * f1Porosity);
+		f1Roughness				=	lerp(f1Roughness		, 0.10f				, ClampRange(f1Wetness, 0.20f, 1.00f));
+		f3Specular				=	lerp(f3Specular			, 0.25f				, ClampRange(f1Wetness, 0.25f, 0.50f));
+		f1AmbientOcclusion		=	lerp(f1AmbientOcclusion	, 1.00f				, ClampRange(f1Wetness, 0.45f, 0.95f));										
+		f4NormalTexture.xy		=	lerp(f4NormalTexture.xy	, float2(0.5f, 0.5f), ClampRange(f1Wetness, 0.45f, 0.95f));
+		f3WorldNormal			=	lerp(f3WorldNormal		, float3(0, 0, 1.0f), ClampRange(f1Wetness, 0.98f, 1.00f));
+		f3WorldNormal			=	normalize(f3WorldNormal);
+}
+#endif
+
+	//==============================================================================================================//
+	// We want to do the below as late as possible so we can modify everything with wetness/porosity first above.
+	//==============================================================================================================//
+
+#if DETAILTEXTURE
+	float4	f4DetailTexture	= tex2D(Sampler_DetailTexture, f3DetailTextureUV.xy);
+	f4DetailTexture.xyz *= f3DetailTextureTint;
+	f3Albedo = TextureCombine( float4(f3Albedo, f4BaseTexture.w), f4DetailTexture, iDetailBlendMode, f1DetailBlendFactor ).xyz;
+#endif
+
+	// Important to use WorldNormal. We want actual direction of the surface, and not fake one.
+		float	f1NdotV				=	max( dot( f3WorldNormal, f3ViewVector ), 0.0f ); // cosLo
+
+	//	AO Fresnel. ( AO should not appear when viewing from the front. )
+	//	AO happens when a pixel is occluded by nearby geometry. This is not the case when you look at it from the front.
+	//	https://advances.realtimerendering.com/other/2016/naughty_dog/NaughtyDog_TechArt_Final.pdf
+			f1AmbientOcclusion	=	lerp(1.0f, f1AmbientOcclusion, f1NdotV);
+	float3	f3NormalTexture		=	normalize((f4NormalTexture.xyz * 2.0f - 1.0f ) * 2.0f); // Perturbed Normals
+	// Merge Facenormal and Normalmap together for reflection vector etc.
+			f3FaceNormal		=	normalize(mul(f3NormalTexture, f3x3NormalBasis));
+
+    // Prepare ambient and direct
+    float3 f3AmbientLighting = 0.0f;
+    float3 f3DirectLighting = 0.0f;
+
+#if !FLASHLIGHT
+	//	We do cubemap ambient cubes because there is no ambient cubes for static props. That way we could also use this on brushes and make things look somewhat consistent.
+    float3 EnvAmbientCube[6];
+    setupEnvMapAmbientCube(EnvAmbientCube, Sampler_EnvironmentMap);
+
+	// Use FaceNormal and this will doom the resulting lightmap.
+	float3 f3LightMap = LUX_BumpedLightmap(f3NormalTexture, f4LightmapUV1, f4LightmapUV2);
+
+	f3DirectLighting = StaticUnrealDiffuseIBL(f3Albedo, f3Specular, f1Roughness, f3ViewVector, f3FaceNormal, f3LightMap);
+	f3DirectLighting *= f1AmbientOcclusion;
+
+	// A better reflection vector...
+	float3 f3ReflectionVector = 2.0 * f1NdotV * f3FaceNormal - f3ViewVector;
+
+#if PCC
+
+	//	Parallax correction (2_0b and beyond)
+	//	Adapted from http://seblagarde.wordpress.com/2012/09/29/image-based-lighting-approaches-and-parallax-corrected-cubemap/
+	float3 f3PositionLS = mul(float4(f3WorldPosition, 1), f4x3CorrectionMatrix);
+	
+	//	Not Tottery Magic Code
+	//	float3	f3RayLS = mul(f3ReflectionVector, (float3x3) f4x3CorrectionMatrix);
+	//	Tottery's Magic Code
+	//	TODO: This uses a f4x3 but it should be using a float f3x3
+	//	TODO: Stuff pos in the alpha if it isn't actually being used anyways.
+	float3	f3RayLS = mul(float4(f3ReflectionVector, 0.0f), f4x3CorrectionMatrix);
+	float3	f3FirstPlaneIntersect = (float3(1.0f, 1.0f, 1.0f) - f3PositionLS) / f3RayLS;
+	float3	f3SecondPlaneIntersect = (-f3PositionLS) / f3RayLS;
+	float3	f3FurthestPlane = max(f3FirstPlaneIntersect, f3SecondPlaneIntersect);
+	float	f1Distance = min(f3FurthestPlane.x, min(f3FurthestPlane.y, f3FurthestPlane.z));
+	
+	// Use distance in WS directly to recover intersection
+	float3 f3IntersectPositionWS = f3WorldPosition + f3ReflectionVector * f1Distance;
+	
+	f3ReflectionVector = f3IntersectPositionWS - f3CubeMapPos;
+	
+	// Lookup the Texture using f3ReflectionVector as the VectorUV for the Cubemap. ( which pixel it points at)
+	float4 f4SpecularUV = float4(f3ReflectionVector, f1Roughness * LOD);
+	float3 f3SpecularLookUp = ENV_MAP_SCALE * texCUBElod(Sampler_EnvironmentMap, f4SpecularUV).xyz;
+
+#else
+
+	// Lookup the Texture using f3ReflectionVector as the VectorUV for the Cubemap. ( which pixel it points at)
+    float4 f4SpecularUV = float4(f3ReflectionVector, f1Roughness * LOD);
+	float3 f3SpecularLookUp = ENV_MAP_SCALE * texCUBElod(Sampler_EnvironmentMap, f4SpecularUV).xyz;
+#endif
+
+	f3SpecularLookUp *= f3EnvMapTint;
+	float3 f3LookupHighSaturated = f3SpecularLookUp * f3SpecularLookUp;
+	f3SpecularLookUp = lerp( f3SpecularLookUp, f3LookupHighSaturated, f1EnvMapContrast );
+
+	// If you are curious this has to do with perception.
+	float3 f3DesaturatedCubemap = dot( f3SpecularLookUp, float3( 0.299f, 0.587f, 0.114f ) );
+	f3SpecularLookUp = lerp( f3DesaturatedCubemap, f3SpecularLookUp, f3EnvMapSaturation );
+
+    float3 f3LookupLow = AmbientLight(f3SpecularLookUp, EnvAmbientCube);
+    float3 f3SpecularIrradiance = lerp(f3SpecularLookUp, f3LookupLow, f1Roughness * f1Roughness);
+    float3 f3SpecularIBL = f3SpecularIrradiance * EnvBRDFApprox(f3Specular, f1Roughness, f1NdotV);
+
+	f3SpecularIBL = lerp(f3SpecularIBL, f3SpecularIBL * saturate(f3DirectLighting), f1EnvMapLightScale);
+
+    f3AmbientLighting = f3SpecularIBL * f1AmbientOcclusion;
+
+    // End ambient
+
+#else  // End direct
+
+// TODO: Pack this into a neat little function inside our Header.
+
+	float4 f4FlashlightSpacePosition = mul(float4(i.WorldPos.xyz, 1.0), g_FlashlightWorldToTexture);
+	clip(f4FlashlightSpacePosition.w);
+
+	// Flashlight position is same as player position...
+	float3 f3ProjCoords = f4FlashlightSpacePosition.xyz / f4FlashlightSpacePosition.w;
+
+	float3 f3FlashlightColor = tex2D(Sampler_FlashlightCookie, f3ProjCoords.xy).xyz; // Sampler_FlashlightCookie
+
+	// Removed some ifdef for Shadermodels here.
+	f3FlashlightColor *= cFlashlightColor.xyz;
+
+	float3	f3Delta = g_FlashlightPos.xyz - i.WorldPos.xyz;
+	float3	f3L = normalize(f3Delta);
+	float	f1DistSquared = dot(f3Delta, f3Delta);
+	float	f1Dist = sqrt(f1DistSquared);
+
+	float	f1FarZ = g_FlashlightAttenuationFactors.w;
+	float	f1EndFalloffFactor = RemapValClamped(f1Dist, f1FarZ, 0.6f * f1FarZ, 0.0f, 1.0f);
+
+	// Attenuation for light and to fade out shadow over distance
+	float	f1Atten = saturate(dot(g_FlashlightAttenuationFactors.xyz, float3(1.0f, 1.0f / f1Dist, 1.0f / f1DistSquared)));
+
+#if FLASHLIGHTSHADOWS
+		// TODO: Figure out if this was set to 2048 because of forced Shadow Resolution or because its good values...
+		float f1Shadow = LUX_DoShadowNvidiaPCF5x5Gaussian(f3ProjCoords, float2(1.0 / 2048.0, 1.0 / 2048.0));
+		float f1Attenuated = lerp(saturate(f1Shadow), 1.0f, g_ShadowTweaks.y);	// Blend between fully attenuated and not attenuated
+		
+		f1Shadow = saturate(lerp(f1Attenuated, f1Shadow, f1Atten));	// Blend between shadow and above, according to light attenuation
+		f3FlashlightColor *= f1Shadow;									// Shadow term
+#endif
+
+	float3 f3DiffuseLighting = f1Atten;
+	f3DiffuseLighting *= saturate(dot(f3L.xyz, f3FaceNormal)); // + f1FlashlightNoLambertValue); // NoLambertValue is either 0 or 2
+	
+	f3DiffuseLighting *= f3FlashlightColor;
+	f3DiffuseLighting *= f1EndFalloffFactor;
+
+	f3DirectLighting  += UnrealDiffuseIBL(f3Albedo, f3Specular, f1Roughness, f3ViewVector, f3FaceNormal, f3L, f3DiffuseLighting);
+
+#endif // !FLASHLIGHT
+
+    float f1FogFactor = CalcPixelFogFactor(PIXELFOGTYPE, g_FogParams, g_EyePos.xyz, f3WorldPosition, f3ProjectPosition.z);
+
+#if !FLASHLIGHT
+#if WRITEWATERFOGTODESTALPHA && (PIXELFOGTYPE == PIXEL_FOG_TYPE_HEIGHT)
+    float f1Alpha = f1FogFactor;
+#else
+    float f1Alpha = f4BaseTexture.a;
+#endif // WRITEWATERFOGTODESTALPHA && (PIXELFOGTYPE == PIXEL_FOG_TYPE_HEIGHT)
+#else
+    float f1Alpha = 0.0f;
+#endif // !FLASHLIGHT
+
+    bool bWriteDepthToAlpha = (WRITE_DEPTH_TO_DESTALPHA != 0) && (WRITEWATERFOGTODESTALPHA == 0);
+
+	// Combine the results
+	float4 f4Result = float4(f3DirectLighting + f3AmbientLighting ,f1Alpha);
+
+#if DETAILTEXTURE
+	f4Result.xyz = TextureCombinePostLighting( f4Result, f4DetailTexture, iDetailBlendMode, f1DetailBlendFactor ); // $detail, $detailblendmode $detailblendfactor
+#endif
+
+#if EMISSION
+	f4Result.xyz += tex2D(Sampler_Emission, f3BaseTextureUV.xy).xyz * f3EmissionTint;
+#endif
+
+    return FinalOutput(f4Result, f1FogFactor, PIXELFOGTYPE, TONEMAP_SCALE_LINEAR, bWriteDepthToAlpha, f3ProjectPosition.z);
+}

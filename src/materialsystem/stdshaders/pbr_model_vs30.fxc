@@ -1,0 +1,210 @@
+//========= ShiroDkxtro2's --ACROHS Ultimate Shaders Project-- ============//
+//
+//	Initial D.	:	21.03.2023 DMY
+//	Last Change :	21.03.2023 DMY
+//
+//	Purpose of this File :	VertexShader for pbr vs30, to be used on Models
+//
+//===========================================================================//
+
+//	Whether or not we need normal, detail or envmapmask uv modifications.
+//  STATIC: "DETAILTEXTURE_UV"			"0..1"
+//  STATIC: "ENVMAPMASK_UV"				"0..1"
+//	STATIC:	"LIGHTMAP_UV"				"0..0"
+//  STATIC: "DECAL"						"0..1"
+
+//	DYNAMIC: "MORPHING"					"0..1"
+//  DYNAMIC: "SKINNING"                 "0..1"
+
+// Morphing Decals? NOPE
+// SKIP: ($MORPHING == 1 && $DECAL == 1)
+
+// We cannot use Vertex colors with seamless coordinates because of the maximum amounts of vertex shader output registers.
+// FIXME : I think this skip doesn't work, I had to add !VERTEX_RGBA to everything so it wouldn't error out on these combinations.
+// SKIP: ($VERTEX_RGBA == 1 && (SEAMLESS_BASE || DETAILTEXTURE_UV == 2 || NORMALTEXTURE_UV == 2 || ENVMAPMASK_UV == 2))
+
+// We include both common_vs_fxc.h and common_fxc.h ( through vs_fxc.h )
+// This is done to get definitions etc for vertex shaders 
+// #include "common_vs_fxc.h"
+
+// Allows us to use model functions from lux_common_vs_fxc.h
+#define MODEL
+
+// Include for lux shaders
+#include "lux_common_vs_fxc.h"
+
+const float4 cBaseTexCoordTransform[2]			: register(SHADER_SPECIFIC_CONST_13); // 13 & 14
+const float4 cNormalTexCoordTransform[2]		:  register( SHADER_SPECIFIC_CONST_15 ); // 15 & 16
+
+#if DETAILTEXTURE_UV
+const float4 cDetailTexCoordTransform[2]		:  register( SHADER_SPECIFIC_CONST_17 );	// 17 & 18
+#endif
+
+// Only used for Override.
+#if ENVMAPMASK_UV
+const float4 cEnvMapMaskTexCoordTransform[2]	:  register( SHADER_SPECIFIC_CONST_19 );	// 19 & 20
+#endif
+
+// NOTE: cMorphTargetTextureDim.xy	= target dimensions,
+//		 cMorphTargetTextureDim.z	= 4tuples/morph
+const float3 cMorphTargetTextureDim				:	register( SHADER_SPECIFIC_CONST_10 );
+const float4 cMorphSubrect						:	register( SHADER_SPECIFIC_CONST_11 );
+sampler2D MorphSampler							:	register( s0 );
+
+
+//-----------------------------------------------------------------------------
+// Input vertex format
+//-----------------------------------------------------------------------------
+struct VS_INPUT
+{
+    // This is all of the stuff that we ever use
+    float4 vPos                     : POSITION;
+	float4 vBoneWeights             : BLENDWEIGHT;	//	Despite no bones,
+	float4 vBoneIndices             : BLENDINDICES; //	we use these in SkinPositionAndNormal()
+    float4 vNormal                  : NORMAL;
+    float2 vTexCoord0               : TEXCOORD0;
+    float4 vLightmapTexCoord        : TEXCOORD1;
+    float4 vLightmapTexCoordOffset  : TEXCOORD2;
+//	float4 vColor                   : COLOR0; // Can't be used on UnlitGeneric for models as we can't pack custom color data. ( Yet ) 
+	float3 vSpecular				: COLOR1;
+
+	// User What now? How can we use that?
+	float4 vUserData				: TANGENT;
+	// Position and normal/tangent deltas
+	float4 vPosFlex					: POSITION1;
+	float4 vNormalFlex				: NORMAL1;
+
+	float vVertexID					: POSITION2;
+};
+
+struct VS_OUTPUT
+{
+    // Stuff that isn't seen by the pixel shader
+	// This is used by the GPU to determine what's actually rendered on-screen ( The actual screenspace position of our triangles )
+    float4 ProjPosSetup				:	POSITION; 
+//	float  Fog						:	FOG;		//... Can we kill this? :)? Answer is yes :D
+    // Stuff that is seen by the pixel shader
+    float4	BaseDetailTexCoord		:	TEXCOORD0;
+	float4	NormalEMMTexCoord		:	TEXCOORD1;
+	float3	WorldNormal				:	TEXCOORD2; // .w Free
+	float3	WorldPos				:	TEXCOORD3; // .w Free
+	float3	ProjPos					:	TEXCOORD4; // .w Free
+	float4	LightmapTexCoord1And2	:	TEXCOORD5; // When not doing static props, this should be free on .zw, but also .xy without static prop
+	float4	LightAtten				:	TEXCOORD6;
+};
+
+//-----------------------------------------------------------------------------
+// Main shader entry point
+//-----------------------------------------------------------------------------
+VS_OUTPUT main( const VS_INPUT v )
+{
+	VS_OUTPUT o = ( VS_OUTPUT )0;
+	
+	float3 vNormal, vPos;
+	vPos = v.vPos.xyz;
+	DecompressVertex_Normal(v.vNormal, vNormal);
+	// We mainly use SkinPositionAndNormal because we want the normal ( and pos )
+	float3 WorldNormal, WorldPos;
+
+#if !MORPHING
+
+	 // Flexes coming in from a separate stream
+	float3 vPosDelta = v.vPosFlex.xyz * cFlexScale.x;
+	float3 vNormalDelta = v.vNormalFlex.xyz * cFlexScale.x; // cFlexScale defined in common_vs_fxc.h Binary Value. Either 0 or 1
+
+	// Wrinklemapping
+	o.LightmapTexCoord1And2.z = 0.0f;
+	
+	vPos.xyz	  += vPosDelta;
+	vNormal       += vNormalDelta;
+	
+#else
+
+	#if DECAL // && MORPHING - Packed together with the statement above.
+		
+	float4 t = float4( v.vLightmapTexCoordOffset.x, v.vLightmapTexCoordOffset.y, 0.0f, 0.0f );
+	float4 vPosDelta = tex2Dlod( MorphSampler, t );
+	t.x += 1.0f / cMorphTargetTextureDim.x;
+	float3 vNormalDelta = tex2Dlod( MorphSampler, t );
+	vPos.xyz	+= vPosDelta.xyz * v.vLightmapTexCoordOffset.z;
+	vNormal		+= vNormalDelta.xyz * v.vLightmapTexCoordOffset.z;
+	o.LightmapTexCoord1And2.z = vPosDelta.w * v.vLightmapTexCoordOffset.z;
+
+	#else
+
+
+	float4 vPosDelta, vNormalDelta;
+	SampleMorphDelta2( MorphSampler, cMorphTargetTextureDim, cMorphSubrect, v.vVertexID, vPosDelta, vNormalDelta );
+	vPos		+= vPosDelta.xyz;
+	vNormal		+= vNormalDelta.xyz;
+
+	#endif
+#endif
+
+#if SKINNING
+	SkinPositionAndNormal(true, float4(vPos, 1.0f), vNormal, v.vBoneWeights, v.vBoneIndices, WorldPos, WorldNormal);
+#else
+	SkinPositionAndNormal(false, float4(vPos, 1.0f), vNormal, v.vBoneWeights, v.vBoneIndices, WorldPos, WorldNormal);
+#endif
+	
+#if MORPHING && DECAL
+		// Avoid z precision errors. TODO: Test if this entire block works correctly.
+		WorldPos += WorldNormal * 0.05f * v.vLightmapTexCoordOffset.z; // This is not actually LightmapTexCoords... But Decal ones I guess
+#endif
+
+	// Transform into projection space
+	float4 vProjPos = mul(float4(WorldPos, 1), cViewProj);
+	o.ProjPosSetup = vProjPos;
+	vProjPos.z = dot(float4(WorldPos, 1), cViewProjZ);
+	
+	o.ProjPos.xyz = vProjPos.xyz;
+//	o.Fog = CalcFog(WorldPos, vProjPos.xyz, false);
+	
+	// Needed for water fog alpha and diffuse lighting 
+	o.WorldPos.xyz = WorldPos;
+	o.WorldNormal.xyz = normalize(WorldNormal);
+
+#if LIGHTMAP_UV
+	// Here's how it works.
+	// Original UV Before : 0.123456
+	// Lightmap UV Before = 0.123456
+	// We need to discard some data. Its too much.
+	// Original UV After : 0.1234000 - We want to have more data on the original UV.
+	// Lightmap UV after = 0.0000123 - We can somewhat discard this data, its not needed.
+	// The UV after packing? 0.1234123. Why? 123.12345678 turns into 123.123459. Guess the problem!
+	float2 LightMapUVs			= v.vTexCoord0*10000 - floor(v.vTexCoord0*10000);
+	float2 BaseTexCoords		= (v.vTexCoord0 - (LightMapUVs*0.0001));
+	o.LightmapTexCoord1And2.xy	= v.vLightmapTexCoord + v.vLightmapTexCoordOffset;
+#else
+	float2 BaseTexCoords		= v.vTexCoord0;
+	o.LightmapTexCoord1And2.xy	= v.vTexCoord0; // Everything else is forced to use the original UV's.
+#endif
+
+	
+	// BaseTexture Coordinate transform
+		o.BaseDetailTexCoord.x = BaseTexCoords.x * cBaseTexCoordTransform[0].x + cBaseTexCoordTransform[0].w;
+		o.BaseDetailTexCoord.y = BaseTexCoords.y * cBaseTexCoordTransform[1].y + cBaseTexCoordTransform[1].w;
+
+	// DetailTexture Coordinate Transform
+	#if DETAILTEXTURE_UV
+				o.BaseDetailTexCoord.z = BaseTexCoords.x * cDetailTexCoordTransform[0].x + cDetailTexCoordTransform[0].w;
+				o.BaseDetailTexCoord.w = BaseTexCoords.y * cDetailTexCoordTransform[1].y + cDetailTexCoordTransform[0].w;
+	#endif
+
+	// EnvMapMask Coordinate Transform
+	#if ENVMAPMASK_UV 
+			o.NormalEMMTexCoord.z = BaseTexCoords.x * cEnvMapMaskTexCoordTransform[0].x + cEnvMapMaskTexCoordTransform[0].w;
+			o.NormalEMMTexCoord.w = BaseTexCoords.y * cEnvMapMaskTexCoordTransform[1].y + cEnvMapMaskTexCoordTransform[1].w;
+	#endif
+
+// NormalTexture Coordinate Transform
+	o.NormalEMMTexCoord.x = BaseTexCoords.x * cNormalTexCoordTransform[0].x + cNormalTexCoordTransform[0].w;
+	o.NormalEMMTexCoord.y = BaseTexCoords.y * cNormalTexCoordTransform[1].y + cNormalTexCoordTransform[1].w;
+
+	o.LightAtten.x = LUX_GetLightAttenuation(WorldPos, 0);
+	o.LightAtten.y = LUX_GetLightAttenuation(WorldPos, 1);
+	o.LightAtten.z = LUX_GetLightAttenuation(WorldPos, 2);
+	o.LightAtten.w = LUX_GetLightAttenuation(WorldPos, 3);
+
+    return o;
+}

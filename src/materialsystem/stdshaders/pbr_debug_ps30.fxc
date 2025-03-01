@@ -1,0 +1,240 @@
+// shadertype=hlsl
+// The line above is for a vs2013 plugin
+//==================================================================================================
+//
+// Debug shader that displays your texture maps as the shader sees them.
+//
+//==================================================================================================
+// WRD : I put some comments here. They are the USED registers!!!
+// When you read this, you owe me a beer
+
+//==================================================================================================
+// Boolean PSREG's
+//==================================================================================================
+// b0 is g_bHighQualityShadows ( common_ps.fxc )
+// b1
+// b2
+// b3
+// b4
+// b5
+// b6
+// b7
+// b8
+// b9
+// b10
+// b11
+// b12
+// b13
+// b14
+// b15
+//
+//==================================================================================================
+// Integer PSREG's -- I assume these don't work
+//==================================================================================================
+// i0	
+// i1
+// i2
+// i3
+// i4
+// i5
+// i6
+// i7
+// i8
+// i9
+// i10
+// i11
+// i12
+// i13
+// i14
+// i15
+//
+//==================================================================================================
+// Floating Point PSREG's
+//==================================================================================================
+// c0	-------------------------------------------- UNUSED
+// c1	is Linearcolorspacemodulation
+// c2	is Flashlight tint and tweaks
+// c3	-------------------------------------------- UNUSED (?)
+// c4	is for Ambient Cubes
+// c5	is for Ambient Cubes
+// c6	is for Ambient Cubes
+// c7	is for Ambient Cubes
+// c8	is for Ambient Cubes
+// c9	is for Ambient Cubes
+// c10	-------------------------------------------- UNUSED
+// c11	is g_EyePos ( and Cubemap LOD )
+// c12	is g_FogParams
+// c13	is g_FlashlightAttenuationFactors
+// c14	is g_FlashlightPos
+// c15	is g_FlashlightWorldToTexture
+// c16	is g_FlashlightWorldToTexture
+// c17	is g_FlashlightWorldToTexture
+// c18	is g_FlashlightWorldToTexture
+// c19	-------------------------------------------- UNUSED (?)
+// c20	is PixelShaderLightInfo
+// c21	is PixelShaderLightInfo
+// c22	is PixelShaderLightInfo
+// c23	is PixelShaderLightInfo
+// c24	is PixelShaderLightInfo
+// c25	is PixelShaderLightInfo
+// c26	-------------------------------------------- UNUSED (?)
+// c27	-------------------------------------------- UNUSED (?)
+// c28	-------------------------------------------- UNUSED (?)
+// c29	is g_LinearFogColor
+// c30	is cLightScale
+// c28	is FlashlightColor
+// c31	is cFlashlightScreenScale
+// 
+// This	is some AROH stuff, so please don't put anything on these. You have constants 43-224 open, so use those instead!!!!
+//
+// c32	is Cascaded Step Data
+// c33	is PSREG_UBERLIGHT_SMOOTH_EDGE_0
+// c34	is PSREG_UBERLIGHT_SMOOTH_EDGE_1
+// c35	is PSREG_UBERLIGHT_SMOOTH_EDGE_OOW
+// c36	is PSREG_UBERLIGHT_SHEAR_ROUND
+// c37	is PSREG_UBERLIGHT_AABB
+// c38	is PSREG_UBERLIGHT_WORLD_TO_LIGHT
+// c39	is PSREG_UBERLIGHT_WORLD_TO_LIGHT
+// c40	is PSREG_UBERLIGHT_WORLD_TO_LIGHT
+// c41	is PSREG_UBERLIGHT_WORLD_TO_LIGHT
+// c42	is open for good measure
+//
+// c43	is BaseTextureTint & BumpScale
+// c44	is MRAOTint	& EnvMapSaturation
+// c45	is EnvMapTint & EnvMapContrast
+// c46	is Detail1Tint & BlendFactor
+// c47	is Detail2Tint & BlendFactor
+// c48	is Dielectriccoefficient and the rest is empty
+// c49	is envmappos ( for pcc )
+// c50	is Envmap Obb Matrix
+// c51	is Envmap Obb Matrix
+// c52	is Envmap Obb Matrix
+// c53  is Detailblendmode1 as a float, dbm2 as a float, the envmapmode as a float, the flashlightmode as a float
+// c54 ..
+// c55	is DEBUG on .x ( trunc before using )
+
+const float4 g_DiffuseModulation                : register(c1); // Colorspace	1
+const float4 g_ShadowTweaks                     : register(c2); // Flashlight	2
+
+const float3 cAmbientCube[6]                    : register(c4); // Amb. Cubes	4-9
+
+const float4 g_EyePos                           : register(c11); // Epos EnvLod	11
+const float4 g_FogParams                        : register(c12); // Fog			12
+const float4 g_FlashlightAttenuationFactors     : register(c13); // Flashlight	13
+const float4 g_FlashlightPos                    : register(c14); // Flashlight	14
+const float4x4 g_FlashlightWorldToTexture       : register(c15); // Flashlight	15-18
+
+//PixelShaderLightInfo cLightInfo[3]              : register(c20); //  20-25 // 2 registers each - 6 registers total (4th light spread across w's)
+
+// Actual things you can use without AROH
+const float4 g_BaseTextureTint_BumpScale		: register(c43);
+const float4 g_MRAOTint_EnvMapSaturation		: register(c44);
+const float4 g_EnvMapTint_Contrast				: register(c45);
+const float4 g_DetailTint_BlendFactor			: register(c46);
+const float4 g_Detail2Tint_BlendFactor			: register(c47); // unused on Override
+const float4 g_DEC								: register(c48);
+const float4 cubemapPos							: register(c49);
+const float4x3 obbMatrix						: register(c50); // 50...51...52
+const float4 FloatedIntegers					: register(c53);
+const float4 EmissionTintScale					: register(c54);
+const float4 DEBUG								: register(c55);
+
+#define g_BaseTextureTint						(g_BaseTextureTint_BumpScale.xyz)
+#define g_BumpScale								(g_BaseTextureTint_BumpScale.w)
+#define g_MRAOTint								(g_MRAOTint_EnvMapSaturation.xyz)
+#define g_EnvMapSaturation						(g_MRAOTint_EnvMapSaturation.w)
+#define g_EnvMapTint							(g_EnvMapTint_Contrast.xyz)
+#define g_EnvMapContrast						(g_EnvMapTint_Contrast.w)
+#define g_DetailTint							(g_DetailTint_BlendFactor.xyz)
+#define g_DetailBlendFactor						(g_DetailTint_BlendFactor.w)	
+#define g_Detail2Tint							(g_Detail2Tint_BlendFactor.xyz)
+#define g_Detail2BlendFactor					(g_Detail2Tint_BlendFactor.w)
+#define g_Dielectricoefficient					(g_DEC.x)
+#define g_EmissionTint							(EmissionTintScale.xyz)
+#define g_EmissionScale							(EmissionTintScale.w)
+
+sampler BaseTextureSampler          : register(s0);
+sampler NormalTextureSampler        : register(s2);
+sampler Detail1TextureSampler		: register(s4);
+sampler Detail2TextureSampler		: register(s5);
+sampler MRAOTextureSampler			: register(s6);
+
+sampler EmissiveSampler				: register(s8);
+
+sampler EnvMapSampler				: register(s10);
+sampler LightMapSampler				: register(s11);
+
+sampler ShadowDepthSampler          : register(s13);     // Flashlight shadow depth map sampler
+sampler RandRotSampler              : register(s14);     // RandomRotation sampler
+sampler FlashlightSampler           : register(s15);     // Flashlight cookie 
+
+#define ENVMAPLOD (g_EyePos.a)
+
+struct PS_INPUT
+{
+    float2 baseTexCoord             : TEXCOORD0;
+    float4 lightAtten               : TEXCOORD1;
+    float3 worldNormal              : TEXCOORD2;
+    float3 worldPos                 : TEXCOORD3;
+    float3 projPos                  : TEXCOORD4;
+    float4 lightmapTexCoord1And2    : TEXCOORD5; 
+    float4 lightmapTexCoord3        : TEXCOORD6;
+    float3 detailTexCoord_atten3	: TEXCOORD7;
+};
+
+float4 main(PS_INPUT i) : COLOR
+{
+int g_DebugInt = trunc(DEBUG.x);
+
+float4 Result = { 1,1,1,0 };
+
+// WRD: Cry about it, its a debug shader.
+
+float4 Material = tex2D(MRAOTextureSampler, i.baseTexCoord);
+
+if ( g_DebugInt < 4 ) // We don't want MRAO-Tint on Specular/Gloss Materials / for now
+{
+	Material.x *= g_MRAOTint.x;
+	Material.y *= g_MRAOTint.y;
+	Material.z *= g_MRAOTint.z;
+}
+
+// Metallic
+if( g_DebugInt == 1 )
+{
+	Result.xyz = Material.xxx;
+}
+
+// Roughness
+if( g_DebugInt == 2 )
+{
+	Result.xyz = Material.yyy;
+}
+
+// Ambient Occlusion
+if( g_DebugInt == 3 )
+{
+	Result.xyz = Material.zzz;
+}
+
+// Specular texture
+if( g_DebugInt == 4 )
+{
+	Result.xyz = tex2D(MRAOTextureSampler, i.baseTexCoord).xyz;	
+}
+
+// Glossiness Texture
+if( g_DebugInt == 5 )
+{
+	Result.xyz = tex2D(MRAOTextureSampler, i.baseTexCoord).www;	
+}
+
+//AO from Normalmap Alpha
+// Note : This might not be what we are actually using in the future... ( I think we should just bake it into specular/albedo )
+if( g_DebugInt == 6 )
+{
+	Result.xyz = tex2D(NormalTextureSampler, i.baseTexCoord).xyz;	
+}
+
+    return Result;
+}

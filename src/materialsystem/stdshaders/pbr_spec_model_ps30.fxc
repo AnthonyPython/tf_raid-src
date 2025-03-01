@@ -1,0 +1,507 @@
+// shadertype=hlsl
+// The line above is for a vs2013 plugin
+//==================================================================================================
+//
+// Physically Based Rendering pixel shader for models
+// 
+// Please set dynamic LIGHTMAPPED_MODEL to 0 if you are using sdk2013sp as your base							( or ignore - suffer )
+// Please set dynamic CASCADED_SHADOW and UBERLIGHT to 0 if you are not on AROH									( or ignore - suffer )
+//
+//==================================================================================================
+
+// STATIC: "FLASHLIGHT"                 "0..1"
+// STATIC: "EMISSION"	                "0..1"
+// STATIC: "DETAIL1"					"0..1"
+
+
+// Currently not functional... Actually it is but do not use it right now, thanks
+// STATIC: "DETAIL2"					"0..0"
+
+// Currently not implemented
+// STATIC: "PARALLAXMAPPING"			"0..0"
+
+// DYNAMIC: "WRITEWATERFOGTODESTALPHA"  "0..1"
+// DYNAMIC: "PIXELFOGTYPE"              "0..1"
+// DYNAMIC: "NUM_LIGHTS"                "0..4"
+// DYNAMIC: "WRITE_DEPTH_TO_DESTALPHA"  "0..1"
+// DYNAMIC: "FLASHLIGHTSHADOWS"         "0..1"
+// DYNAMIC: "LIGHTMAPPED_MODEL"			"0..1"
+// DYNAMIC: "VERTEXLIGHTING"			"0..1"
+
+// Set to 0 if you are NOT on AROH
+// DYNAMIC: "CASCADED_SHADOW"			"0..0"
+// DYNAMIC: "UBERLIGHT"					"0..0"
+
+// Note for envmapmasking - 1 is basealpha, 2 is normal alpha, 3 is masktexture, 4 is no mask
+
+// This is some S++ stuff for AROH
+// SKIP: ($CASCADED_SHADOW) && ($FLASHLIGHT)
+// SKIP: ($UBERLIGHT) && (!$FLASHLIGHT)
+
+// Can't write fog to alpha if there is no fog
+// SKIP: ($PIXELFOGTYPE == 0) && ($WRITEWATERFOGTODESTALPHA != 0)
+// We don't care about flashlight depth unless the flashlight is on
+// SKIP: ( $FLASHLIGHT == 0 ) && ( $FLASHLIGHTSHADOWS == 1 )
+
+#include "common_ps_fxc.h"
+#include "common_flashlight_fxc.h"
+#include "common_lightmappedgeneric_fxc.h"
+#include "shader_constant_register_map.h"
+
+#include "pbr_combined_functions.h"
+
+// WRD : I put some comments here. They are the USED registers!!!
+// When you read this, you owe me a beer
+
+//==================================================================================================
+// Boolean PSREG's
+//==================================================================================================
+// b0 is g_bHighQualityShadows ( common_ps.fxc )
+// b1
+// b2
+// b3
+// b4
+// b5
+// b6
+// b7
+// b8
+// b9
+// b10
+// b11
+// b12
+// b13
+// b14
+// b15
+//
+//==================================================================================================
+// Integer PSREG's -- I assume these don't work
+//==================================================================================================
+// i0	
+// i1
+// i2
+// i3
+// i4
+// i5
+// i6
+// i7
+// i8
+// i9
+// i10
+// i11
+// i12
+// i13
+// i14
+// i15
+//
+//==================================================================================================
+// Floating Point PSREG's
+//==================================================================================================
+// c0	-------------------------------------------- UNUSED
+// c1	is Linearcolorspacemodulation
+// c2	is Flashlight tint and tweaks
+// c3	-------------------------------------------- UNUSED (?)
+// c4	is for Ambient Cubes
+// c5	is for Ambient Cubes
+// c6	is for Ambient Cubes
+// c7	is for Ambient Cubes
+// c8	is for Ambient Cubes
+// c9	is for Ambient Cubes
+// c10	-------------------------------------------- UNUSED
+// c11	is g_EyePos ( and Cubemap LOD )
+// c12	is g_FogParams
+// c13	is g_FlashlightAttenuationFactors
+// c14	is g_FlashlightPos
+// c15	is g_FlashlightWorldToTexture
+// c16	is g_FlashlightWorldToTexture
+// c17	is g_FlashlightWorldToTexture
+// c18	is g_FlashlightWorldToTexture
+// c19	-------------------------------------------- UNUSED (?)
+// c20	is PixelShaderLightInfo
+// c21	is PixelShaderLightInfo
+// c22	is PixelShaderLightInfo
+// c23	is PixelShaderLightInfo
+// c24	is PixelShaderLightInfo
+// c25	is PixelShaderLightInfo
+// c26	-------------------------------------------- UNUSED (?)
+// c27	-------------------------------------------- UNUSED (?)
+// c28	-------------------------------------------- UNUSED (?)
+// c29	is g_LinearFogColor
+// c30	is cLightScale
+// c28	is FlashlightColor
+// c31	is cFlashlightScreenScale
+// 
+// This	is some AROH stuff, so please don't put anything on these. You have constants 43-224 open, so use those instead!!!!
+//
+// c32	is Cascaded Step Data
+// c33	is PSREG_UBERLIGHT_SMOOTH_EDGE_0
+// c34	is PSREG_UBERLIGHT_SMOOTH_EDGE_1
+// c35	is PSREG_UBERLIGHT_SMOOTH_EDGE_OOW
+// c36	is PSREG_UBERLIGHT_SHEAR_ROUND
+// c37	is PSREG_UBERLIGHT_AABB
+// c38	is PSREG_UBERLIGHT_WORLD_TO_LIGHT
+// c39	is PSREG_UBERLIGHT_WORLD_TO_LIGHT
+// c40	is PSREG_UBERLIGHT_WORLD_TO_LIGHT
+// c41	is PSREG_UBERLIGHT_WORLD_TO_LIGHT
+// c42	is open for good measure
+//
+// c43	is BaseTextureTint & BumpScale
+// c44	is MRAOTint	& EnvMapSaturation
+// c45	is EnvMapTint & EnvMapContrast
+// c46	is Detail1Tint & BlendFactor
+// c47	is Detail2Tint & BlendFactor
+// c48	is Dielectriccoefficient and the rest is empty
+// c49	is envmappos ( for pcc )
+// c50	is Envmap Obb Matrix
+// c51	is Envmap Obb Matrix
+// c52	is Envmap Obb Matrix
+// c53  is Detailblendmode1 as a float, dbm2 as a float, the envmapmode as a float, the flashlightmode as a float
+// c54 ..
+// c55 ... free
+
+const float4 g_DiffuseModulation                : register(c1); // Colorspace	1
+const float4 g_ShadowTweaks                     : register(c2); // Flashlight	2
+
+const float3 cAmbientCube[6]                    : register(c4); // Amb. Cubes	4-9
+
+const float4 g_EyePos                           : register(c11); // Epos EnvLod	11
+const float4 g_FogParams                        : register(c12); // Fog			12
+const float4 g_FlashlightAttenuationFactors     : register(c13); // Flashlight	13
+const float4 g_FlashlightPos                    : register(c14); // Flashlight	14
+const float4x4 g_FlashlightWorldToTexture       : register(c15); // Flashlight	15-18
+
+PixelShaderLightInfo cLightInfo[3]              : register(c20); //  20-25 // 2 registers each - 6 registers total (4th light spread across w's)
+
+// AROH stuff
+#if CASCADED_SHADOW
+const float3 g_CascadedStepData					: register( c32 ); // 32
+#define g_CascadedForward g_FlashlightPos
+#define g_DirectionalLightMask g_FlashlightAttenuationFactors
+#endif
+
+// AROH stuff
+#if UBERLIGHT
+const float3 g_vSmoothEdge0						: register( PSREG_UBERLIGHT_SMOOTH_EDGE_0 ); // 33
+const float3 g_vSmoothEdge1						: register( PSREG_UBERLIGHT_SMOOTH_EDGE_1 ); // 34
+const float3 g_vSmoothOneOverWidth				: register( PSREG_UBERLIGHT_SMOOTH_EDGE_OOW ); // 35
+const float4 g_vShearRound						: register( PSREG_UBERLIGHT_SHEAR_ROUND ); // 36
+const float4 g_aAbB								: register( PSREG_UBERLIGHT_AABB ); // 37
+const float4x4 g_FlashlightWorldToLight			: register( PSREG_UBERLIGHT_WORLD_TO_LIGHT ); // 38...39...40...41
+#endif
+
+// Actual things you can use without AROH
+const float4 g_BaseTextureTint_BumpScale		: register(c43);
+const float4 g_MRAOTint_EnvMapSaturation		: register(c44);
+const float4 g_EnvMapTint_Contrast				: register(c45);
+const float4 g_DetailTint_BlendFactor			: register(c46);
+const float4 g_Detail2Tint_BlendFactor			: register(c47); // unused on Override
+const float4 g_DEC								: register(c48);
+const float4 cubemapPos							: register(c49);
+const float4x3 obbMatrix						: register(c50); // 50...51...52
+const float4 FloatedIntegers					: register(c53);
+const float4 EmissionTintScale					: register(c54);
+const float4 DEBUG								: register(c55);
+
+#define g_BaseTextureTint						(g_BaseTextureTint_BumpScale.xyz)
+#define g_BumpScale								(g_BaseTextureTint_BumpScale.w)
+#define g_MRAOTint								(g_MRAOTint_EnvMapSaturation.xyz)
+#define g_EnvMapSaturation						(g_MRAOTint_EnvMapSaturation.w)
+#define g_EnvMapTint							(g_EnvMapTint_Contrast.xyz)
+#define g_EnvMapContrast						(g_EnvMapTint_Contrast.w)
+#define g_DetailTint							(g_DetailTint_BlendFactor.xyz)
+#define g_DetailBlendFactor						(g_DetailTint_BlendFactor.w)	
+#define g_Detail2Tint							(g_Detail2Tint_BlendFactor.xyz)
+#define g_Detail2BlendFactor					(g_Detail2Tint_BlendFactor.w)
+#define g_Dielectricoefficient					(g_DEC.x)
+#define g_EmissionTint							(EmissionTintScale.xyz)
+#define g_EmissionScale							(EmissionTintScale.w)
+
+sampler BaseTextureSampler          : register(s0);
+sampler NormalTextureSampler        : register(s2);
+sampler Detail1TextureSampler		: register(s4);
+sampler Detail2TextureSampler		: register(s5);
+sampler MRAOTextureSampler			: register(s6);
+
+sampler EmissiveSampler				: register(s8);
+
+sampler EnvMapSampler				: register(s10);
+sampler LightMapSampler				: register(s11);
+
+sampler ShadowDepthSampler          : register(s13);     // Flashlight shadow depth map sampler
+sampler RandRotSampler              : register(s14);     // RandomRotation sampler
+sampler FlashlightSampler           : register(s15);     // Flashlight cookie 
+
+#define ENVMAPLOD (g_EyePos.a)
+
+struct PS_INPUT
+{
+    float2 baseTexCoord             : TEXCOORD0;
+    float4 lightAtten               : TEXCOORD1;
+    float4 worldNormal              : TEXCOORD2; // Detailtexcoord .x on .w
+    float4 worldPos                 : TEXCOORD3; // Detailtexcoord .y on .w
+    float3 projPos                  : TEXCOORD4;
+//	float4 lightmapTexCoord1And2    : TEXCOORD5;  // We don't have these on models
+//	float4 lightmapTexCoord3        : TEXCOORD6;  // We don't have these on models
+	float4 color					: TEXCOORD7;
+#if CASCADED_SHADOW
+	float4 flashlightSpacePos									: TEXCOORD8;
+#endif
+
+};
+  
+// Entry point
+float4 main(PS_INPUT i) : COLOR
+{
+
+// So you might ask : "but WRD why don't you use integer PSREG's..."
+// To which I say : "Leave me alone"
+// ( They don't work???? I DON'T KNOW!!! just try it yourself if they are so great??? )
+int g_Detail1BlendMode				= trunc(FloatedIntegers.x);
+int g_Detail2BlendMode				= trunc(FloatedIntegers.y);
+int g_EnvMapMode					= trunc(FloatedIntegers.z);
+int g_FlashlightDepthFilterMode		= trunc(FloatedIntegers.w);
+int g_Debug							= trunc(DEBUG.x);
+
+    float3 surfNormal = normalize(i.worldNormal.xyz);
+    float3 surfTangent;
+    float3 surfBase; 
+    float flipSign;
+    float3x3 normalBasis = compute_tangent_frame(surfNormal, i.worldPos.xyz, i.baseTexCoord , surfTangent, surfBase, flipSign);
+
+    float2 correctedTexCoord = i.baseTexCoord;
+
+	// g_BumpScale must be applied carefully as otherwise there will be issues. Important is that it gets added BEFORE normalization
+	float3 f3NormalMap; // This has to be done because compiler doesn't like if statement declarations
+	float4 f4NormalMapWithAlpha;
+	float f1NormalMapAlpha;
+    f3NormalMap = normalize((tex2D( NormalTextureSampler,  correctedTexCoord).xyz - float3(0.5, 0.5, 0.5))) * g_BumpScale;
+    float3 normal = normalize(mul(f3NormalMap, normalBasis)); // World Normal
+
+    float4 f4BaseTexture = tex2D(BaseTextureSampler, correctedTexCoord);
+	f4BaseTexture.xyz *= g_BaseTextureTint; // This way, $srgbtint, $color and $color2 are obsoleted.
+
+	// MRAO
+	float4 f4SpecularGlossiness = tex2D(MRAOTextureSampler, correctedTexCoord);
+
+	float roughness = 1.0f - f4SpecularGlossiness.w;
+
+	// Had to pack this... Sorry!
+	float2 f2DetailTexCoords = float2(i.worldNormal.w , i.worldPos.w);
+
+// TODO: Move this to the end, right before merge.
+#if (DETAIL1 == 1)
+    float4 Detail1Texture = tex2D(Detail1TextureSampler, f2DetailTexCoords);
+	Detail1Texture.xyz *= g_DetailTint; // $detailtint
+	// function wants a float4, float4, int, float
+	f4BaseTexture = TextureCombine( f4BaseTexture, Detail1Texture, g_Detail1BlendMode, g_DetailBlendFactor ); // $detail, $detailblendmode $detailblendfactor
+#endif
+
+#if (DETAIL2 == 1)
+    float4 Detail2Texture = tex2D(Detail2TextureSampler, f2DetailTexCoords);
+	Detail2Texture.xyz *= g_Detail2Tint; // $detail2tint
+	// function wants a float4, float4, int, float
+	f4BaseTexture = TextureCombine( f4BaseTexture, Detail2Texture, g_Detail2BlendMode, g_Detail2BlendFactor ); // $detail2, $detail2blendmode $detail2blendfactor
+#endif
+
+    f3NormalMap.y *= flipSign; // Fixup textureNormal for ambient lighting
+
+    float3 outgoingLightDirection = normalize(g_EyePos.xyz - i.worldPos.xyz); // Lo
+    float lightDirectionAngle = max(0, dot(normal, outgoingLightDirection)); // cosLo
+
+    float3 specularReflectionVector = 2.0 * lightDirectionAngle * normal - outgoingLightDirection; // Lr
+
+	float3 f3Albedo = f4BaseTexture.xyz; //  * ( 1.0f - metalness ) <- metalness to specular
+	float3 f3Specular = f4SpecularGlossiness.xyz; // lerp(g_Dielectricoefficient, f4BaseTexture.rgb, metalness) <- metalness to specular
+
+    // Prepare ambient and direct
+    float3 ambientLighting = 0.0;
+    float3 directLighting = 0.0;
+
+#if !FLASHLIGHT
+
+	// We do cubemap ambient cubes because there is no ambient cubes for static props. That way we could also use this on brushes and make things look somewhat consistent.
+    float3 EnvAmbientCube[6];
+    setupEnvMapAmbientCube(EnvAmbientCube, EnvMapSampler);
+	float3 diffuseIrradiance = ambientLookupModel(normal, EnvAmbientCube, f3NormalMap, correctedTexCoord.xyyy, correctedTexCoord.xyyy, LightMapSampler, float4(1,1,1,1));
+
+#if VERTEXLIGHTING
+
+	// float3 diffuseIrradiance = i.color.rgb;
+	// x + s(y-x) <- this is the actual calculation done by lerp()
+
+	diffuseIrradiance = diffuseIrradiance + (i.color.rgb * ( i.color.rgb - diffuseIrradiance )); 
+
+ #endif
+
+	float3 diffuseIBL = StaticUnrealDiffuseIBL(f3Albedo, f3Specular, roughness, outgoingLightDirection, normal, float3(0,0,0), diffuseIrradiance);
+
+#if (PCC == 1)
+        float4 vNormal = float4(0, 0, 1, 1);        
+        // calculate reflectionVector
+
+        float3 worldVertToEyeVector = g_EyePos.xyz - i.worldPos.xyz;
+		float3 reflectVect = CalcReflectionVectorUnnormalized( normal, worldVertToEyeVector );
+
+        // The actual parallax corrected cubemaps code
+
+        //Parallax correction (2_0b and beyond)
+        //Adapted from http://seblagarde.wordpress.com/2012/09/29/image-based-lighting-approaches-and-parallax-corrected-cubemap/
+        float3 WorldPosPCC = i.worldPos.xyz;
+        float3 positionLS = mul(float4(WorldPosPCC, 1), obbMatrix);
+
+        //Not Tottery Magic Code
+        //float3 rayLS = mul(reflectVect, (float3x3) obbMatrix);
+        //Tottery Magic Code
+        float3 rayLS = mul(float4(reflectVect, 0.0f), obbMatrix);
+
+        float3 firstPlaneIntersect = (float3(1.0f, 1.0f, 1.0f) - positionLS) / rayLS;
+        float3 secondPlaneIntersect = (-positionLS) / rayLS;
+        float3 furthestPlane = max(firstPlaneIntersect, secondPlaneIntersect);
+        float distance = min(furthestPlane.x, min(furthestPlane.y, furthestPlane.z));
+
+        // Use distance in WS directly to recover intersection
+        float3 intersectPositionWS = WorldPosPCC + reflectVect * distance;
+
+        reflectVect = intersectPositionWS - cubemapPos;
+
+        // Apply our ReflectVect!
+
+        float4 specularUV = float4(reflectVect, roughness * ENVMAPLOD);
+        float3 lookupHigh = ENV_MAP_SCALE * texCUBElod(EnvMapSampler, specularUV).xyz;
+
+#elif (PCC == 0)
+    float4 specularUV = float4(specularReflectionVector, roughness * ENVMAPLOD);
+    float3 lookupHigh = ENV_MAP_SCALE * texCUBElod(EnvMapSampler, specularUV).xyz;
+
+#endif
+
+		lookupHigh *= g_EnvMapTint;
+		float3 lookupHighSquared = lookupHigh * lookupHigh;
+		lookupHigh = lerp( lookupHigh, lookupHighSquared, g_EnvMapContrast );
+		float3 greyScale = dot( lookupHigh, float3( 0.299f, 0.587f, 0.114f ) );
+		lookupHigh = lerp( greyScale, lookupHigh, g_EnvMapSaturation );
+
+    float3 lookupLow = PixelShaderAmbientLight(specularReflectionVector, EnvAmbientCube);
+    float3 specularIrradiance = lerp(lookupHigh, lookupLow, roughness * roughness);
+    float3 specularIBL = specularIrradiance * EnvBRDFApprox(f3Specular, roughness, lightDirectionAngle);
+
+    ambientLighting = diffuseIBL + specularIBL;
+    // End ambient
+
+	// This is CSM on models
+	//float4 vLightAtten = i.lightAtten;
+	//#if CASCADED_SHADOW
+	//	float flShadow = DoCascadedShadow( ShadowDepthSampler, RandRotSampler, normal,
+	//		g_CascadedForward, i.flashlightSpacePos, i.worldPos.xyz, 0, g_CascadedStepData,
+	//		i.projPos.xy / i.projPos.z, float4( 0.0005, 0.0, 0.0, 0.0 ) );
+	//	
+	//	vLightAtten *= lerp( float4( 1, 1, 1, 1 ), float4( flShadow, flShadow, flShadow, flShadow ), g_DirectionalLightMask );
+	//#endif
+
+    // Start direct
+    for (uint n = 0; n < NUM_LIGHTS; ++n)
+    {
+        float3 LightIn = normalize(PixelShaderGetLightVector(i.worldPos.xyz, cLightInfo, n));
+        float3 LightColor = PixelShaderGetLightColor(cLightInfo, n) * GetAttenForLight(i.lightAtten, n); // Li
+
+        directLighting += UnrealDiffuseIBL(f3Albedo, f3Specular, roughness, outgoingLightDirection, normal, LightIn, LightColor);
+    }
+    // End direct
+
+	#if CASCADED_SHADOW
+	float4 closePosition = i.flashlightSpacePos; //mul( float4( i.worldPos_projPosZ.xyz, 1.0f ), g_CascadedCloseShadow );
+	//closePosition.xyz /= closePosition.w;
+	
+	float flShadow = 1.0 - DoCascadedShadow( ShadowDepthSampler, RandRotSampler, normal,
+		g_CascadedForward, closePosition, i.worldPos.xyz, 0, g_CascadedStepData,
+		i.projPos.xy / i.projPos.z, float4( 0.0005, 0.0, 0.0, 0.0 ) );
+
+	float3 lightDelta = directLighting - g_ShadowTweaks.xyz;
+	lightDelta -= dot( g_FlashlightAttenuationFactors.xyz, lightDelta ) * g_FlashlightAttenuationFactors.xyz;
+	float flShadowMask = lightDelta.x * lightDelta.x + lightDelta.y * lightDelta.y + lightDelta.z * lightDelta.z;
+	flShadowMask = 1.0f - saturate( flShadowMask * g_ShadowTweaks.w );
+	
+	//float flShadowMask = 1.0f - saturate( length( cross( g_FlashlightAttenuationFactors.xyz, diffuseLighting - g_AmbientLightMin ) )
+	//	* g_AmbientLightScale );
+	
+	directLighting = min( directLighting, lerp( directLighting, g_ShadowTweaks.xyz, flShadow * flShadowMask ) );
+#endif
+
+
+
+#else
+
+    // Start flashlight
+	float4 flashlightSpacePosition = mul(float4(i.worldPos.xyz, 1.0), g_FlashlightWorldToTexture);
+	clip( flashlightSpacePosition.w ); // Stop projected textures from projecting backwards (only really happens if they have a big FOV because they get frustum culled)
+	float3 vProjCoords = flashlightSpacePosition.xyz / flashlightSpacePosition.w;
+
+    float3 delta = g_FlashlightPos.xyz - i.worldPos.xyz;
+    float distSquared = dot(delta, delta);
+    float dist = sqrt(distSquared);
+
+    float3 flashlightColor = tex2D(FlashlightSampler, vProjCoords.xy);
+    flashlightColor *= cFlashlightColor.xyz;
+
+// To do : Whats so different about Uberlight?
+#if FLASHLIGHTSHADOWS
+    float flashlightShadow = DoFlashlightShadow(ShadowDepthSampler, RandRotSampler, vProjCoords, i.projPos, g_FlashlightDepthFilterMode, g_ShadowTweaks, true);
+    float flashlightAttenuated = lerp(flashlightShadow, 1.0, g_ShadowTweaks.y);         // Blend between fully attenuated and not attenuated
+    float fAtten = saturate(dot(g_FlashlightAttenuationFactors.xyz, float3(1.0, 1.0 / dist, 1.0 / distSquared)));
+    flashlightShadow = saturate(lerp(flashlightAttenuated, flashlightShadow, fAtten));  // Blend between shadow and above, according to light attenuation
+    flashlightColor *= flashlightShadow;
+#elif UBERLIGHT
+		flashlightColor *= uberlight( flashlightSpacePosition, g_vSmoothEdge0, g_vSmoothEdge1,
+				           g_vSmoothOneOverWidth, g_vShearRound.xy, g_aAbB, g_vShearRound.zw );
+#endif
+
+    float farZ = g_FlashlightAttenuationFactors.w;
+    float endFalloffFactor = RemapValClamped(dist, farZ, 0.6 * farZ, 0.0, 1.0);
+
+    float3 flashLightIntensity = flashlightColor * endFalloffFactor;
+        
+    float3 flashLightIn = normalize(g_FlashlightPos.xyz - i.worldPos.xyz);
+
+    directLighting += max(0, calculateLightModel(flashLightIn, flashLightIntensity, outgoingLightDirection,
+        normal, f3Specular, roughness, 0.0f, lightDirectionAngle, f3Albedo)); // TODO: revisit the function to make it ready for Specular/Glossiness
+    // End flashlight
+
+#endif // !FLASHLIGHT
+
+    float fogFactor = CalcPixelFogFactor(PIXELFOGTYPE, g_FogParams, g_EyePos.xyz, i.worldPos.xyz, i.projPos.z);
+
+#if !FLASHLIGHT
+
+#if WRITEWATERFOGTODESTALPHA && (PIXELFOGTYPE == PIXEL_FOG_TYPE_HEIGHT)
+    float alpha = fogFactor;
+#else
+    float alpha = f4BaseTexture.a;
+#endif // WRITEWATERFOGTODESTALPHA && (PIXELFOGTYPE == PIXEL_FOG_TYPE_HEIGHT)
+
+#else
+
+    float alpha = 0.0f;
+
+#endif // !FLASHLIGHT
+
+    bool bWriteDepthToAlpha = (WRITE_DEPTH_TO_DESTALPHA != 0) && (WRITEWATERFOGTODESTALPHA == 0);
+
+    float3 CombinedLighting = directLighting + ambientLighting;
+
+#if EMISSION
+
+float3	EmissionTexture		 = tex2D(EmissiveSampler, correctedTexCoord).xyz;
+		EmissionTexture		*= g_EmissionTint;
+		CombinedLighting	+= ( EmissionTexture * g_EmissionScale );
+
+#endif
+
+#if DETAIL1
+	CombinedLighting = TextureCombinePostLighting( CombinedLighting, Detail1Texture, g_Detail1BlendMode, g_DetailBlendFactor ); // $detail, $detailblendmode $detailblendfactor
+#endif
+
+#if DETAIL2
+	CombinedLighting = TextureCombinePostLighting( CombinedLighting, Detail2Texture, g_Detail2BlendMode, g_Detail2BlendFactor ); // $detail, $detailblendmode $detailblendfactor
+#endif
+
+    return FinalOutput(float4(CombinedLighting, alpha), fogFactor, PIXELFOGTYPE, TONEMAP_SCALE_LINEAR, bWriteDepthToAlpha, i.projPos.z);
+}
