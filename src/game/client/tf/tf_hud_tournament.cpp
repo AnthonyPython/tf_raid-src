@@ -702,7 +702,7 @@ void CHudTournament::ApplySchemeSettings( IScheme *pScheme )
 	m_bReapplyPlayerPanelKVs = true;
 
 	KeyValues *pConditions = NULL;
-	if ( TFGameRules() && TFGameRules()->IsMannVsMachineMode() )
+	if ( TFGameRules() && ( TFGameRules()->IsMannVsMachineMode() || TFGameRules()->IsRaidMode()))
 	{
 		pConditions = new KeyValues( "conditions" );
 		AddSubKeyNamed( pConditions, "if_mvm" );
@@ -843,7 +843,7 @@ void CHudTournament::RecalculatePlayerPanels( void )
 			continue;
 			
 		// Spectators see all players, team members only see their team.
-		if ( TFGameRules() && (TFGameRules()->IsMannVsMachineMode()|| TFGameRules()->IsRaidMode()) && iTeam != iLocalTeam && iLocalTeam != TEAM_SPECTATOR )
+		if ( TFGameRules() && (TFGameRules()->IsMannVsMachineMode()) && iTeam != iLocalTeam && iLocalTeam != TEAM_SPECTATOR )
 			continue;
 
 		if ( iTeam != TF_TEAM_RED && iTeam != TF_TEAM_BLUE )

@@ -88,6 +88,9 @@ private:
 	void SpawnMobs( CUtlVector< CTFNavArea * > *spawnAreaVector );
 	CountdownTimer m_mobSpawnTimer;
 	CountdownTimer m_mobLifetimeTimer;
+
+	CountdownTimer m_squadSpawnTimer;
+	CountdownTimer m_squadLifetimeTimer;
 	CTFNavArea *m_mobArea;
 	int m_mobCountRemaining;
 	int m_mobClass;

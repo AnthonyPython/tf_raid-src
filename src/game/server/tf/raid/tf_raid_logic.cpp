@@ -67,10 +67,10 @@ ConVar tf_raid_mob_spawn_below_tolerance( "tf_raid_mob_spawn_below_tolerance", "
 ConVar tf_raid_mob_spawn_min_range( "tf_raid_mob_spawn_min_range", "1000"/*, FCVAR_CHEAT*/ );
 ConVar tf_raid_spawn_mobs( "tf_raid_spawn_mobs", "1"/*, FCVAR_CHEAT*/ );
 
-ConVar tf_raid_spawn_mob_as_squad_chance_start( "tf_raid_spawn_mob_as_squad_chance_start", "100" ); // /*, FCVAR_CHEAT*/ );
-ConVar tf_raid_spawn_mob_as_squad_chance_halfway( "tf_raid_spawn_mob_as_squad_chance_halfway", "100" ); // /*, FCVAR_CHEAT*/ );
-ConVar tf_raid_spawn_mob_as_squad_chance_final( "tf_raid_spawn_mob_as_squad_chance_final", "100" ); // /*, FCVAR_CHEAT*/ );
-ConVar tf_raid_squad_medic_intro_percent( "tf_raid_squad_medic_intro_percent", "0.5" ); // /*, FCVAR_CHEAT*/ );
+ConVar tf_raid_spawn_mob_as_squad_chance_start( "tf_raid_spawn_mob_as_squad_chance_start", "35" ); // /*, FCVAR_CHEAT*/ );
+ConVar tf_raid_spawn_mob_as_squad_chance_halfway( "tf_raid_spawn_mob_as_squad_chance_halfway", "65" ); // /*, FCVAR_CHEAT*/ );
+ConVar tf_raid_spawn_mob_as_squad_chance_final( "tf_raid_spawn_mob_as_squad_chance_final", "90" ); // /*, FCVAR_CHEAT*/ );
+ConVar tf_raid_squad_medic_intro_percent( "tf_raid_squad_medic_intro_percent", "0.3" ); // /*, FCVAR_CHEAT*/ );
 
 
 ConVar tf_raid_capture_mob_interval( "tf_raid_capture_mob_interval", "15"/*, FCVAR_CHEAT*/ );
@@ -93,6 +93,8 @@ ConVar tf_raid_debug_escape_route( "tf_raid_debug_escape_route", "0"/*, FCVAR_CH
 ConVar tf_raid_debug_director( "tf_raid_debug_director", "0"/*, FCVAR_CHEAT*/ );
 
 ConVar tf_raid_spawn_enable( "tf_raid_spawn_enable", "1"/*, FCVAR_CHEAT*/ );
+
+ConVar tf_raid_max_squad_count("tf_raid_max_squad_count", "1", 0/*FCVAR_CHEAT*/);
 
 extern ConVar tf_populator_active_buffer_range;
 
@@ -940,6 +942,10 @@ CTFNavArea *CRaidLogic::FindSpawnAreaBehind( void )
 //--------------------------------------------------------------------------------------------------------
 bool CRaidLogic::SpawnSquad( CTFNavArea *spawnArea )
 {
+
+	if (m_squadCount >= tf_raid_max_squad_count.GetInt())
+		return false;
+
 	if ( spawnArea == NULL )
 		return false;
 

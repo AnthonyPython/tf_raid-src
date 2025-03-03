@@ -1062,7 +1062,7 @@ bool CTFSpectatorGUI::InTournamentGUI( void )
 {
 	bool bOverride = false;
 
-	if ( TFGameRules() && (TFGameRules()->IsMannVsMachineMode() || TFGameRules()->IsRaidMode()) )
+	if ( TFGameRules() && (TFGameRules()->IsMannVsMachineMode() ) )
 	{
 		bOverride = true;
 	}

@@ -1629,14 +1629,14 @@ wpntranslation_class_weapons_t pszWpnEntTranslationList[] =
 		"tf_weapon_shotgun",
 		{
 			"",							// TF_CLASS_UNDEFINED = 0,
-			"",							// TF_CLASS_SCOUT,
-			"",							// TF_CLASS_SNIPER,
+			"tf_weapon_shotgun_primary",							// TF_CLASS_SCOUT,
+			"tf_weapon_shotgun_pyro",							// TF_CLASS_SNIPER,
 			"tf_weapon_shotgun_soldier",// TF_CLASS_SOLDIER,
-			"",							// TF_CLASS_DEMOMAN,
-			"",							// TF_CLASS_MEDIC,
+			"tf_weapon_shotgun_primary",							// TF_CLASS_DEMOMAN,
+			"tf_weapon_shotgun_primary",							// TF_CLASS_MEDIC,
 			"tf_weapon_shotgun_hwg",	// TF_CLASS_HEAVYWEAPONS,
 			"tf_weapon_shotgun_pyro",	// TF_CLASS_PYRO,
-			"",							// TF_CLASS_SPY,
+			"tf_weapon_shotgun_pyro",							// TF_CLASS_SPY,
 			"tf_weapon_shotgun_primary",// TF_CLASS_ENGINEER,		
 		}
 	},
@@ -1646,13 +1646,13 @@ wpntranslation_class_weapons_t pszWpnEntTranslationList[] =
 		{
 			"",							// TF_CLASS_UNDEFINED = 0,
 			"tf_weapon_pistol_scout",	// TF_CLASS_SCOUT,
-			"",							// TF_CLASS_SNIPER,
-			"",							// TF_CLASS_SOLDIER,
-			"",							// TF_CLASS_DEMOMAN,
-			"",							// TF_CLASS_MEDIC,
-			"",							// TF_CLASS_HEAVYWEAPONS,
-			"",							// TF_CLASS_PYRO,
-			"",							// TF_CLASS_SPY,
+			"tf_weapon_pistol",							// TF_CLASS_SNIPER,
+			"tf_weapon_pistol",							// TF_CLASS_SOLDIER,
+			"tf_weapon_pistol",							// TF_CLASS_DEMOMAN,
+			"tf_weapon_pistol",							// TF_CLASS_MEDIC,
+			"tf_weapon_pistol",							// TF_CLASS_HEAVYWEAPONS,
+			"tf_weapon_pistol",							// TF_CLASS_PYRO,
+			"tf_weapon_revolver",							// TF_CLASS_SPY,
 			"tf_weapon_pistol",			// TF_CLASS_ENGINEER,		
 		}
 	},
@@ -1661,30 +1661,30 @@ wpntranslation_class_weapons_t pszWpnEntTranslationList[] =
 		"tf_weapon_shovel",
 		{
 			"",							// TF_CLASS_UNDEFINED = 0,
-			"",							// TF_CLASS_SCOUT,
-			"",							// TF_CLASS_SNIPER,
+			"tf_weapon_bat",							// TF_CLASS_SCOUT,
+			"tf_weapon_club",							// TF_CLASS_SNIPER,
 			"tf_weapon_shovel",			// TF_CLASS_SOLDIER,
 			"tf_weapon_bottle",			// TF_CLASS_DEMOMAN,
-			"",							// TF_CLASS_MEDIC,
-			"",							// TF_CLASS_HEAVYWEAPONS,
-			"",							// TF_CLASS_PYRO,
-			"",							// TF_CLASS_SPY,
-			"",							// TF_CLASS_ENGINEER,		
+			"tf_weapon_bonesaw",							// TF_CLASS_MEDIC,
+			"tf_weapon_fireaxe",							// TF_CLASS_HEAVYWEAPONS,
+			"tf_weapon_fireaxe",							// TF_CLASS_PYRO,
+			"tf_weapon_knife",							// TF_CLASS_SPY,
+			"tf_weapon_wrench",							// TF_CLASS_ENGINEER,		
 		}
 	},
 	{
 		"tf_weapon_bottle",
 		{
 			"",							// TF_CLASS_UNDEFINED = 0,
-			"",							// TF_CLASS_SCOUT,
-			"",							// TF_CLASS_SNIPER,
+			"tf_weapon_bat",							// TF_CLASS_SCOUT,
+			"tf_weapon_club",							// TF_CLASS_SNIPER,
 			"tf_weapon_shovel",			// TF_CLASS_SOLDIER,
 			"tf_weapon_bottle",			// TF_CLASS_DEMOMAN,
-			"",							// TF_CLASS_MEDIC,
-			"",							// TF_CLASS_HEAVYWEAPONS,
-			"",							// TF_CLASS_PYRO,
-			"",							// TF_CLASS_SPY,
-			"",							// TF_CLASS_ENGINEER,		
+			"tf_weapon_bonesaw",							// TF_CLASS_MEDIC,
+			"tf_weapon_fireaxe",							// TF_CLASS_HEAVYWEAPONS,
+			"tf_weapon_fireaxe",							// TF_CLASS_PYRO,
+			"tf_weapon_knife",							// TF_CLASS_SPY,
+			"tf_weapon_wrench",							// TF_CLASS_ENGINEER,		
 		}
 	},
 	{
@@ -1721,15 +1721,15 @@ wpntranslation_class_weapons_t pszWpnEntTranslationList[] =
 		"tf_weapon_parachute",
 		{
 			"",											// TF_CLASS_UNDEFINED = 0,
-			"",			// TF_CLASS_SCOUT,
-			"",			// TF_CLASS_SNIPER,
+			"tf_weapon_parachute_primary",			// TF_CLASS_SCOUT,
+			"tf_weapon_parachute_secondary",			// TF_CLASS_SNIPER,
 			"tf_weapon_parachute_secondary",			// TF_CLASS_SOLDIER,
 			"tf_weapon_parachute_primary",				// TF_CLASS_DEMOMAN,
-			"",			// TF_CLASS_MEDIC,
-			"",			// TF_CLASS_HEAVYWEAPONS
-			"",			// TF_CLASS_PYRO,
-			""			// TF_CLASS_SPY,
-			"",			// TF_CLASS_ENGINEER,		
+			"tf_weapon_parachute_primary",			// TF_CLASS_MEDIC,
+			"tf_weapon_parachute_secondary",			// TF_CLASS_HEAVYWEAPONS
+			"tf_weapon_parachute_primary",			// TF_CLASS_PYRO,
+			"tf_weapon_parachute_primary"			// TF_CLASS_SPY,
+			"tf_weapon_parachute_primary",			// TF_CLASS_ENGINEER,		
 		}
 	},
 	{
@@ -1744,7 +1744,8 @@ wpntranslation_class_weapons_t pszWpnEntTranslationList[] =
 			"",			// TF_CLASS_HEAVYWEAPONS
 			"",			// TF_CLASS_PYRO,
 			"tf_weapon_revolver",				// TF_CLASS_SPY,
-			"tf_weapon_revolver_secondary",		// TF_CLASS_ENGINEER,		
+			"tf_weapon_revolver",				// TF_CLASS_ENGINEER,
+			//"tf_weapon_revolver_secondary",		// TF_CLASS_ENGINEER,		
 		}
 	},
 };

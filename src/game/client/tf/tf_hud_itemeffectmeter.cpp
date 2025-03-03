@@ -278,6 +278,8 @@ void CHudItemEffectMeter::CreateHudElementsForClass( C_TFPlayer* pPlayer, CUtlVe
 		DECLARE_ITEM_EFFECT_METER( CTFSodaPopper, TF_WEAPON_SODA_POPPER, true, "resource/UI/HudItemEffectMeter_SodaPopper.res" );
 		DECLARE_ITEM_EFFECT_METER( CTFPEPBrawlerBlaster, TF_WEAPON_PEP_BRAWLER_BLASTER, true, "resource/UI/HudItemEffectMeter_SodaPopper.res" );
 		DECLARE_ITEM_EFFECT_METER( CTFCleaver, TF_WEAPON_CLEAVER, true, "resource/UI/HudItemEffectMeter_Cleaver.res" );
+		lambdaAddItemEffectMeter("tf_weapon_lunchbox", true);
+
 		break;
 
 	case TF_CLASS_HEAVYWEAPONS:
@@ -327,6 +329,7 @@ void CHudItemEffectMeter::CreateHudElementsForClass( C_TFPlayer* pPlayer, CUtlVe
 		DECLARE_ITEM_EFFECT_METER( CTFShotgun_Revenge, TF_WEAPON_SENTRY_REVENGE, false, "resource/UI/HUDItemEffectMeter_Engineer.res" );
 		DECLARE_ITEM_EFFECT_METER( CTFDRGPomson, TF_WEAPON_DRG_POMSON, false, "resource/UI/HUDItemEffectMeter_Pomson.res" );
 		DECLARE_ITEM_EFFECT_METER( CTFRevolver, TF_WEAPON_REVOLVER, false, "resource/UI/HUDItemEffectMeter_Spy.res" );
+		lambdaAddItemEffectMeter("tf_weapon_lunchbox", true);
 		break;
 
 	case TF_CLASS_PYRO:

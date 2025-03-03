@@ -142,7 +142,7 @@ void CTFAmmoPack::InitAmmoPack( CTFPlayer *pPlayer, CTFWeaponBase *pWeapon, int 
 		GiveAmmo( iPrimary, TF_AMMO_PRIMARY );			// Gets recalculated in PackTouch
 		GiveAmmo( iSecondary, TF_AMMO_SECONDARY );		// Gets recalculated in PackTouch
 		GiveAmmo( iMetal, TF_AMMO_METAL );
-		SetHealthInstead( pWeapon && pWeapon->GetWeaponID() == TF_WEAPON_LUNCHBOX && pPlayer->IsPlayerClass( TF_CLASS_HEAVYWEAPONS ) );
+		SetHealthInstead( pWeapon && pWeapon->GetWeaponID() == TF_WEAPON_LUNCHBOX /* && pPlayer->IsPlayerClass(TF_CLASS_HEAVYWEAPONS)*/);
 	}
 	else
 	{

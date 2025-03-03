@@ -307,7 +307,7 @@ void CTFClientScoreBoardDialog::ApplySchemeSettings( vgui::IScheme *pScheme )
 
 	KeyValues *pConditions = NULL;
 
-	if ( TFGameRules() && TFGameRules()->IsMannVsMachineMode() )
+	if ( TFGameRules() && (TFGameRules()->IsMannVsMachineMode() || TFGameRules()->IsRaidMode()))
 	{
 		pConditions = new KeyValues( "conditions" );
 		AddSubKeyNamed( pConditions, "if_mvm" );
@@ -870,14 +870,28 @@ void CTFClientScoreBoardDialog::InitializeInputScheme( void )
 //-----------------------------------------------------------------------------
 void CTFClientScoreBoardDialog::Reset()
 {
+	if (!m_bIsPVEMode || (TFGameRules() && TFGameRules()->IsRaidMode()))
+	{
+		InitPlayerList(m_pPlayerListBlue);
+	}
 	if ( !m_bIsPVEMode )
 	{
-		InitPlayerList( m_pPlayerListBlue );
+		
 		InitPlayerList( m_pPlayerListRed );
 	}
 
- 	m_pPlayerListBlue->SetVisible( !m_bIsPVEMode );
- 	m_pPlayerListRed->SetVisible( !m_bIsPVEMode );
+	if (TFGameRules() && TFGameRules()->IsRaidMode())
+	{
+		m_pPlayerListBlue->SetVisible( m_bIsPVEMode );
+		m_pPlayerListRed->SetVisible(false);
+	}
+	else
+	{
+		m_pPlayerListBlue->SetVisible(!m_bIsPVEMode);
+		m_pPlayerListRed->SetVisible(!m_bIsPVEMode);
+	}
+ 	
+ 	
 }
 
 //-----------------------------------------------------------------------------
@@ -1031,7 +1045,7 @@ void CTFClientScoreBoardDialog::UpdateTeamInfo()
 		}
 	}
 
-	bool bMvM = TFGameRules() && TFGameRules()->IsMannVsMachineMode();
+	bool bMvM = TFGameRules() && (TFGameRules()->IsMannVsMachineMode() || TFGameRules()->IsRaidMode());
 	bool bTournament = mp_tournament.GetBool() && !bMvM;
 	if ( m_pRedTeamName->IsVisible() != bTournament )
 	{

@@ -18134,6 +18134,12 @@ void CTFPlayer::Taunt( taunts_t iTauntIndex, int iTauntConcept )
 			}
 		}
 	}
+	else if (pActiveWeapon && pActiveWeapon->GetWeaponID() == TF_WEAPON_LUNCHBOX)
+	{
+		m_flTauntAttackTime = gpGlobals->curtime + 1.0;
+		m_iTauntAttack = TAUNTATK_HEAVY_EAT;
+
+	}
 	else if ( iTauntIndex == TAUNT_SPECIAL )
 	{
 		if ( IsPlayerClass( TF_CLASS_ENGINEER ) )

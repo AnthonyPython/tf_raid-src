@@ -169,7 +169,7 @@ void C_TFTeam::UpdateTeamName( void )
 
 	if ( m_iTeamNum == TF_TEAM_BLUE )
 	{
-		if (TFGameRules() && TFGameRules()->IsMannVsMachineMode())
+		if (TFGameRules() && TFGameRules()->IsRaidMode())
 		{
 			pwzName = g_pVGuiLocalize->Find("#TF_Raiders");
 			if (!pwzName)
