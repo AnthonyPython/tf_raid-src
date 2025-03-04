@@ -6095,6 +6095,8 @@ int CTFPlayer::GetAutoTeam( int nPreferedTeam /*= TF_TEAM_AUTOASSIGN*/ )
 			{
 				bReturnDefenders = true;
 			}
+
+			
 #endif // TF_RAID_MODE
 
 			if ( TFGameRules()->IsMannVsMachineMode() )
@@ -6146,6 +6148,12 @@ int CTFPlayer::GetAutoTeam( int nPreferedTeam /*= TF_TEAM_AUTOASSIGN*/ )
 		CTFBot *pPlayerBot = dynamic_cast<CTFBot*>( this );
 		if ( FStrEq( tf_bot_quota_mode.GetString(), "fill" ) && ( tf_bot_quota.GetInt() > 0 ) && !( pPlayerBot && pPlayerBot->HasAttribute( CTFBot::QUOTA_MANANGED ) ) )
 		{
+			//bots for fill must go to blue for raid mode! no auto balence!
+			if (TFGameRules()->IsRaidMode())
+			{
+				//return TFGameRules()->GetTeamAssignmentOverride(this, TF_TEAM_PVE_INVADERS);
+				return TF_TEAM_PVE_INVADERS;
+			}
 			// We're using 'tf_bot_quota_mode fill' to keep the teams even so balance based on the human players on each team
 			int nPlayerCountRed = 0;
 			int nPlayerCountBlue = 0;
@@ -6224,6 +6232,13 @@ int CTFPlayer::GetAutoTeam( int nPreferedTeam /*= TF_TEAM_AUTOASSIGN*/ )
 			// If kick needed but failed, fall through to default logic
 		}
 
+		//Ok if were not using fill with bot quota then we probably a player 
+		// in any case lets just be on blue for raid mode to be forced on , we shouldn't ever be on red!
+		if (TFGameRules()->IsRaidMode())
+		{
+			//return TFGameRules()->GetTeamAssignmentOverride(this, TF_TEAM_PVE_INVADERS);
+			return TF_TEAM_PVE_INVADERS;
+		}
 		if ( pBlue->GetNumPlayers() < pRed->GetNumPlayers() )
 		{
 			iTeam = TF_TEAM_BLUE;
