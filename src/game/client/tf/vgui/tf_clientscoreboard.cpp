@@ -873,11 +873,7 @@ void CTFClientScoreBoardDialog::Reset()
 	if (!m_bIsPVEMode || (TFGameRules() && TFGameRules()->IsRaidMode()))
 	{
 		InitPlayerList(m_pPlayerListBlue);
-	}
-	if ( !m_bIsPVEMode )
-	{
-		
-		InitPlayerList( m_pPlayerListRed );
+		InitPlayerList(m_pPlayerListRed);
 	}
 
 	if (TFGameRules() && TFGameRules()->IsRaidMode())

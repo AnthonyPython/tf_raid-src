@@ -172,8 +172,8 @@ ActionResult< CBossAlpha >	CBossAlphaNukeAttack::Update( CBossAlpha *me, float i
 						playerVictim->m_Shared.SelfBurn(tf_boss_alpha_nuke_afterburn_time.GetFloat());
 					}
 
-					color32 colorHit = { 255, 255, 255, 255 };
-					UTIL_ScreenFade( victim, colorHit, 1.0f, 0.1f, FFADE_IN );
+					//color32 colorHit = { 255, 255, 255, 255 };
+					//UTIL_ScreenFade( victim, colorHit, 1.0f, 0.1f, FFADE_IN );
 				}
 			}
 		}

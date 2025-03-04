@@ -6390,7 +6390,7 @@ void CTFPlayer::HandleCommand_JoinTeam( const char *pTeamName )
 		}
 	}
 
-	if ( TFGameRules()->IsBossBattleMode() )
+	if ( TFGameRules()->IsBossBattleMode() || TFGameRules()->IsRaidMode())
 	{
 		if ( !IsBot() && iTeam != TEAM_SPECTATOR )
 		{

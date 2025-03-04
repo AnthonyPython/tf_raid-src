@@ -33,12 +33,12 @@ ConVar tf_debug_sniper_spots( "tf_debug_sniper_spots", "0"/*, FCVAR_CHEAT*/ );
 
 
 ConVar tf_raid_max_wanderers( "tf_raid_max_wanderers", "20"/*, FCVAR_CHEAT*/ );
-ConVar tf_raid_max_defense_engineers( "tf_raid_max_defense_engineers", "4"/*, FCVAR_CHEAT*/ );
+ConVar tf_raid_max_defense_engineers( "tf_raid_max_defense_engineers", "2"/*, FCVAR_CHEAT*/ );
 ConVar tf_raid_max_defense_demomen( "tf_raid_max_defense_demomen", "1"/*, FCVAR_CHEAT*/ );
 ConVar tf_raid_max_defense_heavies( "tf_raid_max_defense_heavies", "1"/*, FCVAR_CHEAT*/ );
 ConVar tf_raid_max_defense_soldiers( "tf_raid_max_defense_soldiers", "1"/*, FCVAR_CHEAT*/ );
 ConVar tf_raid_max_defense_pyros( "tf_raid_max_defense_pyros", "1"/*, FCVAR_CHEAT*/ );
-ConVar tf_raid_max_defense_spies( "tf_raid_max_defense_spies", "1"/*, FCVAR_CHEAT*/ );
+ConVar tf_raid_max_defense_spies( "tf_raid_max_defense_spies", "2"/*, FCVAR_CHEAT*/ );
 ConVar tf_raid_max_defense_snipers( "tf_raid_max_defense_snipers", "3"/*, FCVAR_CHEAT*/ );
 ConVar tf_raid_max_defense_squads( "tf_raid_max_defense_squads", "1"/*, FCVAR_CHEAT*/ );
 
@@ -49,7 +49,7 @@ ConVar tf_raid_wandering_max_health("tf_raid_wandering_max_health", "100",0 /*FC
 ConVar tf_raid_wandering_max_speed("tf_raid_wandering_max_speed", "100", 0/*FCVAR_CHEAT*/, "Wandering defenders max speed");
 
 ConVar tf_raid_defender_density( "tf_raid_defender_density", "0.000001", 0/*FCVAR_CHEAT*/, "Wandering defenders per unit area" );
-ConVar tf_raid_max_defender_count( "tf_raid_max_defender_count", "18", 0/*FCVAR_CHEAT*/ );
+ConVar tf_raid_max_defender_count( "tf_raid_max_defender_count", "14", 0/*FCVAR_CHEAT*/ );
 ConVar tf_raid_spawn_defenders( "tf_raid_spawn_defenders", "1"/*, FCVAR_CHEAT*/ );
 
 
@@ -62,7 +62,7 @@ ConVar tf_raid_engineer_spawn_interval( "tf_raid_engineer_spawn_interval", "20"/
 
 ConVar tf_raid_mob_spawn_min_interval( "tf_raid_mob_spawn_min_interval", "40"/*, FCVAR_CHEAT*/ );
 ConVar tf_raid_mob_spawn_max_interval( "tf_raid_mob_spawn_max_interval", "70"/*, FCVAR_CHEAT*/ );
-ConVar tf_raid_mob_spawn_count( "tf_raid_mob_spawn_count", "15"/*, FCVAR_CHEAT*/ );
+ConVar tf_raid_mob_spawn_count( "tf_raid_mob_spawn_count", "10"/*, FCVAR_CHEAT*/ );
 ConVar tf_raid_mob_spawn_below_tolerance( "tf_raid_mob_spawn_below_tolerance", "150"/*, FCVAR_CHEAT*/ );
 ConVar tf_raid_mob_spawn_min_range( "tf_raid_mob_spawn_min_range", "1000"/*, FCVAR_CHEAT*/ );
 ConVar tf_raid_spawn_mobs( "tf_raid_spawn_mobs", "1"/*, FCVAR_CHEAT*/ );
@@ -1152,16 +1152,14 @@ void CRaidLogic::SpawnMobs( CUtlVector< CTFNavArea * > *spawnAreaVector )
 		m_mobArea = SelectMobSpawn( spawnAreaVector, m_wasCapturingPoint ? ANYWHERE : BEHIND );
 		if ( m_mobArea )
 		{
-			const int mobClassCount = 7;
+			const int mobClassCount = 5;
 			static int mobClassList[ mobClassCount ] = 
 			{
-				TF_CLASS_SCOUT,
 				TF_CLASS_SCOUT,
 				TF_CLASS_SCOUT,
 				TF_CLASS_SOLDIER,
 				TF_CLASS_HEAVYWEAPONS,
 				TF_CLASS_PYRO,
-				TF_CLASS_SPY,
 			};
 
 			m_mobLifetimeTimer.Start( 7.0f );
