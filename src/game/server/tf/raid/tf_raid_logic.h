@@ -65,10 +65,13 @@ public:
 
 	CBaseEntity *GetRescueRespawn( void ) const;						// return entity positioned within next valid rescue closet area for to respawn players in
 
+	int GetExtrasCount(void) const;
+
 private:
 	bool LoadPopulationFromFile( void );
 public:
 	int m_priorRaiderAliveCount;
+	int m_humanCount;
 	bool m_wasCapturingPoint;
 private:
 	int m_wandererCount;
@@ -80,6 +83,8 @@ private:
 	int m_spyCount;
 	int m_sniperCount;
 	int m_squadCount;
+
+	
 
 	void OnRoundStart( void );
 	bool Unspawn( CTFPlayer *who );

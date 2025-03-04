@@ -32,14 +32,14 @@ CRaidLogic *g_pRaidLogic = NULL;
 ConVar tf_debug_sniper_spots( "tf_debug_sniper_spots", "0"/*, FCVAR_CHEAT*/ );
 
 
-ConVar tf_raid_max_wanderers( "tf_raid_max_wanderers", "20"/*, FCVAR_CHEAT*/ );
-ConVar tf_raid_max_defense_engineers( "tf_raid_max_defense_engineers", "2"/*, FCVAR_CHEAT*/ );
+ConVar tf_raid_max_wanderers( "tf_raid_max_wanderers", "14"/*, FCVAR_CHEAT*/ );
+ConVar tf_raid_max_defense_engineers( "tf_raid_max_defense_engineers", "1"/*, FCVAR_CHEAT*/ );
 ConVar tf_raid_max_defense_demomen( "tf_raid_max_defense_demomen", "1"/*, FCVAR_CHEAT*/ );
 ConVar tf_raid_max_defense_heavies( "tf_raid_max_defense_heavies", "1"/*, FCVAR_CHEAT*/ );
 ConVar tf_raid_max_defense_soldiers( "tf_raid_max_defense_soldiers", "1"/*, FCVAR_CHEAT*/ );
 ConVar tf_raid_max_defense_pyros( "tf_raid_max_defense_pyros", "1"/*, FCVAR_CHEAT*/ );
-ConVar tf_raid_max_defense_spies( "tf_raid_max_defense_spies", "2"/*, FCVAR_CHEAT*/ );
-ConVar tf_raid_max_defense_snipers( "tf_raid_max_defense_snipers", "3"/*, FCVAR_CHEAT*/ );
+ConVar tf_raid_max_defense_spies( "tf_raid_max_defense_spies", "1"/*, FCVAR_CHEAT*/ );
+ConVar tf_raid_max_defense_snipers( "tf_raid_max_defense_snipers", "1"/*, FCVAR_CHEAT*/ );
 ConVar tf_raid_max_defense_squads( "tf_raid_max_defense_squads", "1"/*, FCVAR_CHEAT*/ );
 
 
@@ -95,6 +95,8 @@ ConVar tf_raid_debug_director( "tf_raid_debug_director", "0"/*, FCVAR_CHEAT*/ );
 ConVar tf_raid_spawn_enable( "tf_raid_spawn_enable", "1"/*, FCVAR_CHEAT*/ );
 
 ConVar tf_raid_max_squad_count("tf_raid_max_squad_count", "1", 0/*FCVAR_CHEAT*/);
+
+ConVar tf_raid_human_per_max("tf_raid_human_per_max", "2"/*, FCVAR_CHEAT*/);
 
 extern ConVar tf_populator_active_buffer_range;
 
@@ -1367,38 +1369,38 @@ void CRaidLogic::SpawnSpecials( CUtlVector< CTFNavArea * > *spawnAheadVector, CU
 		int availableSpecialClassList[ specialClassCount ];
 		int availableCount = 0;
 
-		if ( m_sniperCount < tf_raid_max_defense_snipers.GetInt() )
+		if ( m_sniperCount < (GetExtrasCount() + tf_raid_max_defense_snipers.GetInt() ) )
 		{
 			// increased chance of a sniper
 			availableSpecialClassList[ availableCount++ ] = TF_CLASS_SNIPER;
 			availableSpecialClassList[ availableCount++ ] = TF_CLASS_SNIPER;
 		}
 
-		if ( m_demomanCount < tf_raid_max_defense_demomen.GetInt() )
+		if ( m_demomanCount < (GetExtrasCount() + tf_raid_max_defense_demomen.GetInt() ) )
 		{
 			availableSpecialClassList[ availableCount++ ] = TF_CLASS_DEMOMAN;
 		}
 
-		if ( m_heavyCount < tf_raid_max_defense_heavies.GetInt() )
+		if ( m_heavyCount < (GetExtrasCount() + tf_raid_max_defense_heavies.GetInt() ))
 		{
 			availableSpecialClassList[ availableCount++ ] = TF_CLASS_HEAVYWEAPONS;
 		}
 
-		if ( m_soldierCount < tf_raid_max_defense_soldiers.GetInt() )
+		if ( m_soldierCount < (GetExtrasCount() + tf_raid_max_defense_soldiers.GetInt() ) )
 		{
 			availableSpecialClassList[ availableCount++ ] = TF_CLASS_SOLDIER;
 		}
 
-		if ( m_pyroCount < tf_raid_max_defense_pyros.GetInt() )
+		if ( m_pyroCount < (GetExtrasCount() + tf_raid_max_defense_pyros.GetInt() ) )
 		{
 			availableSpecialClassList[ availableCount++ ] = TF_CLASS_PYRO;
 		}
 
-		if ( m_spyCount < tf_raid_max_defense_spies.GetInt() )
+		if ( m_spyCount < (GetExtrasCount() + tf_raid_max_defense_spies.GetInt() ))
 		{
 			availableSpecialClassList[ availableCount++ ] = TF_CLASS_SPY;
 		}
-		if (m_engineerCount < tf_raid_max_defense_engineers.GetInt())
+		if (m_engineerCount < (GetExtrasCount() + tf_raid_max_defense_engineers.GetInt() ))
 		{
 			availableSpecialClassList[availableCount++] = TF_CLASS_ENGINEER;
 		}
@@ -1679,6 +1681,7 @@ void CRaidLogic::Update( void )
 
 	if ( IsWaitingForRaidersToLeaveSafeRoom() )
 	{
+		int humanCount = 0;
 		// has anyone left?
 		for( int i=0; i<raidingTeam->GetNumPlayers(); ++i )
 		{
@@ -1690,6 +1693,8 @@ void CRaidLogic::Update( void )
 			// don't start until a HUMAN leaves the safe room
 			if ( player->IsBot() )
 				continue;
+
+			humanCount++;
 
 			CTFNavArea *area = (CTFNavArea *)player->GetLastKnownArea();
 
@@ -1704,15 +1709,23 @@ void CRaidLogic::Update( void )
 				DevMsg( "RAID: %3.2f: Raiders left the spawn room!\n", gpGlobals->curtime );
 			}
 		}
+
+		m_humanCount = humanCount;
 	}
 	else
 	{
 		int aliveCount = 0;
+		int humanCount = 0;
 		for( int i=0; i<raidingTeam->GetNumPlayers(); ++i )
 		{
 			CTFPlayer *player = ToTFPlayer( raidingTeam->GetPlayer(i) );
 
 			CTFBot *bot = ToTFBot( player );
+
+			if (!player->IsBot())
+			{
+				humanCount++;
+			}
 			if ( bot && bot->HasAttribute( CTFBot::IS_NPC ) )
 				continue;
 
@@ -1727,6 +1740,7 @@ void CRaidLogic::Update( void )
 			}
 		}
 
+		
 		if ( m_priorRaiderAliveCount < 0 )
 		{
 			// just left the safe room
@@ -1763,6 +1777,7 @@ void CRaidLogic::Update( void )
 			}
 		}
 
+		m_humanCount = humanCount;
 		m_priorRaiderAliveCount = aliveCount;
 
 
@@ -1964,7 +1979,7 @@ void CRaidLogic::Update( void )
 
 #if 1
 	// populate wanderers
-	CPopulator populator( maxIncursion, tf_raid_max_wanderers.GetInt() - m_wandererCount );
+	CPopulator populator( maxIncursion,(GetExtrasCount() + tf_raid_max_wanderers.GetInt()) - m_wandererCount );
 	SearchSurroundingAreas( m_farthestAlongRaider->GetLastKnownArea(), populator );
 
 	// if raiders are capturing a point, spawn mobs at a faster rate
@@ -2316,6 +2331,11 @@ CBaseEntity *CRaidLogic::GetRescueRespawn( void ) const
 	}
 
 	return NULL;
+}
+
+int CRaidLogic::GetExtrasCount(void) const
+{
+	return m_humanCount * tf_raid_human_per_max.GetInt();
 }
 
 

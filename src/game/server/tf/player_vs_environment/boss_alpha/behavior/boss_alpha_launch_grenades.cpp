@@ -12,8 +12,10 @@
 ConVar tf_boss_alpha_grenade_ring_min_horiz_vel( "tf_boss_alpha_grenade_ring_min_horiz_vel", "100"/*, FCVAR_CHEAT*/ );
 ConVar tf_boss_alpha_grenade_ring_max_horiz_vel( "tf_boss_alpha_grenade_ring_max_horiz_vel", "350"/*, FCVAR_CHEAT*/ );
 ConVar tf_boss_alpha_grenade_vert_vel( "tf_boss_alpha_grenade_vert_vel", "750"/*, FCVAR_CHEAT*/ );
-ConVar tf_boss_alpha_grenade_det_time( "tf_boss_alpha_grenade_det_time", "3"/*, FCVAR_CHEAT*/ );
+ConVar tf_boss_alpha_grenade_min_det_time( "tf_boss_alpha_grenade_min_det_time", "1"/*, FCVAR_CHEAT*/ );
+ConVar tf_boss_alpha_grenade_max_det_time( "tf_boss_alpha_grenade_max_det_time", "6"/*, FCVAR_CHEAT*/ );
 ConVar tf_boss_alpha_grenade_damage( "tf_boss_alpha_grenade_damage", "25"/*, FCVAR_CHEAT*/ );
+
 
 
 //---------------------------------------------------------------------------------------------
@@ -38,11 +40,12 @@ void CBossAlphaLaunchGrenades::LaunchGrenade( CBossAlpha *me, const Vector &laun
 {
 	CTFGrenadePipebombProjectile *pProjectile = CTFGrenadePipebombProjectile::Create( me->WorldSpaceCenter() + Vector( 0, 0, 100 ), vec3_angle, launchVel, 
 																					  AngularImpulse( 600, random->RandomInt( -1200, 1200 ), 0 ), 
-																					  me, *weaponInfo, TF_PROJECTILE_PIPEBOMB_REMOTE, 1 );
+																					  me, *weaponInfo, TF_PROJECTILE_PIPEBOMB, 1 );
 	if ( pProjectile )
 	{
 		pProjectile->SetLauncher( me );
 		pProjectile->SetDamage( tf_boss_alpha_grenade_damage.GetFloat() );
+		pProjectile->SetDetonateTimerLength(RandomInt(tf_boss_alpha_grenade_min_det_time.GetInt(), tf_boss_alpha_grenade_max_det_time.GetInt()));
 
 		if ( me->IsInCondition( CBossAlpha::ENRAGED ) )
 		{
@@ -162,10 +165,15 @@ ActionResult< CBossAlpha >	CBossAlphaLaunchGrenades::Update( CBossAlpha *me, flo
 
 		me->EmitSound( "Weapon_Grenade_Normal.Single" );
 
-		m_detonateTimer.Start( tf_boss_alpha_grenade_det_time.GetFloat() );
+		//m_detonateTimer.Start( tf_boss_alpha_grenade_det_time.GetFloat() );
 	}
 
-	if ( m_detonateTimer.HasStarted() && m_detonateTimer.IsElapsed() )
+	if (m_grenadeVector.Count() <= 0)
+	{
+		return Done();
+	}
+
+	/*if (m_detonateTimer.HasStarted() && m_detonateTimer.IsElapsed())
 	{
 		// detonate the stickies
 		for( int i=0; i<m_grenadeVector.Count(); ++i )
@@ -177,7 +185,7 @@ ActionResult< CBossAlpha >	CBossAlphaLaunchGrenades::Update( CBossAlpha *me, flo
 		}
 
 		return Done();
-	}
+	}*/
 
 	return Continue();
 }
@@ -187,14 +195,14 @@ ActionResult< CBossAlpha >	CBossAlphaLaunchGrenades::Update( CBossAlpha *me, flo
 void CBossAlphaLaunchGrenades::OnEnd( CBossAlpha *me, Action< CBossAlpha > *nextAction )
 {
 	// fizzle any outstanding stickies
-	for( int i=0; i<m_grenadeVector.Count(); ++i )
+	/*for (int i = 0; i<m_grenadeVector.Count(); ++i)
 	{
 		if ( m_grenadeVector[i] )
 		{
 			m_grenadeVector[i]->Fizzle();
 			m_grenadeVector[i]->Detonate();
 		}
-	}
+	}*/
 
 	me->RemoveCondition( CBossAlpha::ENRAGED );
 	me->RemoveCondition( CBossAlpha::BUSY );

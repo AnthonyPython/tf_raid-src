@@ -57,11 +57,11 @@ ActionResult< CBossAlpha >	CBossAlphaNukeAttack::Update( CBossAlpha *me, float i
 		g_pMonsterResource->SetBossStunPercentage( 1.0f - stunRatio );
 	}
 
-	if ( m_shakeTimer.IsElapsed() )
+	/*if (m_shakeTimer.IsElapsed())
 	{
 		m_shakeTimer.Reset();
 		UTIL_ScreenShake( me->GetAbsOrigin(), 15.0f, 5.0f, 1.0f, 3000.0f, SHAKE_START );
-	}
+	}*/
 
 	if ( m_chargeUpTimer.IsElapsed() )
 	{
