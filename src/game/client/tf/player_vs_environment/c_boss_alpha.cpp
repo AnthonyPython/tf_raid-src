@@ -41,6 +41,7 @@ void C_BossAlpha::Spawn( void )
 	BaseClass::Spawn();
 
 	m_vecViewOffset = Vector( 0, 0, 180.0f );
+	SetModelScale(4.0f);
 
 	SetNextClientThink( CLIENT_THINK_ALWAYS );
 }

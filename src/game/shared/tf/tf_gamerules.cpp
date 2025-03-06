@@ -2121,7 +2121,7 @@ bool CTFGameRules::GameModeUsesUpgrades( void )
 	if ( m_nForceUpgrades == 2 )
 		return true;
 
-	if ( IsMannVsMachineMode() || IsBountyMode() )
+	if ( IsMannVsMachineMode() || IsBountyMode() || IsRaidMode() )
 		return true;
 
 	return false;

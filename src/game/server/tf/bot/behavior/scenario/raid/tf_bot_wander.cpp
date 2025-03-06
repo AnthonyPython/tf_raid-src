@@ -74,6 +74,10 @@ ActionResult< CTFBot >	CTFBotWander::Update( CTFBot *me, float interval )
 		CTFPlayer *threat = NULL;
 		float closeThreatRangeSq = tf_raid_wanderer_aggro_range.GetFloat() * tf_raid_wanderer_aggro_range.GetFloat();
 
+		bool isspy = false;
+		bool targetspy = false;
+		
+
 		for( int i=0; i<raidingTeam->GetNumPlayers(); ++i )
 		{
 			CTFPlayer *player = (CTFPlayer *)raidingTeam->GetPlayer(i);
@@ -92,10 +96,52 @@ ActionResult< CTFBot >	CTFBotWander::Update( CTFBot *me, float interval )
 			}
 		}
 
-		if ( threat )
+		if (threat)
 		{
-			return SuspendFor( new CTFBotMobRush( threat ), "Attacking threat!" );
+			if (threat->IsPlayerClass(TF_CLASS_SPY))
+			{
+				isspy = true;
+			}
+
+			if (isspy && threat->m_Shared.IsStealthed())
+			{
+				if (threat->m_Shared.GetPercentInvisible() < 0.75f)
+				{
+					// spy is partially cloaked, and therefore attracts our attention
+					targetspy = true;
+				}
+
+				// invisible!
+				targetspy = false;
+			}
+
+			if (isspy && threat->IsPlacingSapper())
+			{
+				targetspy = true;
+			}
+
+			if (threat->m_Shared.InCond(TF_COND_DISGUISING))
+			{
+				targetspy = true;
+			}
+
+			if (threat->m_Shared.InCond(TF_COND_DISGUISED) && threat->m_Shared.GetDisguiseTeam() == me->GetTeamNumber())
+			{
+				// spy is disguised as a member of my team
+				targetspy = false;
+			}
+
+			if (!isspy)
+			{
+				return SuspendFor(new CTFBotMobRush(threat), "Attacking threat!");
+			}
+			else if (threat && targetspy)
+			{
+				return SuspendFor(new CTFBotMobRush(threat), "Attacking threat!");
+			}
 		}
+
+		
 	}
 
 	

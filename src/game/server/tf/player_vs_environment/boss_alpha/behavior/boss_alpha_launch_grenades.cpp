@@ -165,27 +165,22 @@ ActionResult< CBossAlpha >	CBossAlphaLaunchGrenades::Update( CBossAlpha *me, flo
 
 		me->EmitSound( "Weapon_Grenade_Normal.Single" );
 
-		//m_detonateTimer.Start( tf_boss_alpha_grenade_det_time.GetFloat() );
+		m_detonateTimer.Start(tf_boss_alpha_grenade_min_det_time.GetFloat() );
 	}
 
-	if (m_grenadeVector.Count() <= 0)
-	{
-		return Done();
-	}
-
-	/*if (m_detonateTimer.HasStarted() && m_detonateTimer.IsElapsed())
+	if (m_detonateTimer.HasStarted() && m_detonateTimer.IsElapsed())
 	{
 		// detonate the stickies
-		for( int i=0; i<m_grenadeVector.Count(); ++i )
+		/*for (int i = 0; i<m_grenadeVector.Count(); ++i)
 		{
 			if ( m_grenadeVector[i] )
 			{
 				m_grenadeVector[i]->Detonate();
 			}
-		}
+		}*/
 
 		return Done();
-	}*/
+	}
 
 	return Continue();
 }

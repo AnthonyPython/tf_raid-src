@@ -52,7 +52,7 @@ ConVar tf_boss_alpha_stun_rocket_reflect_count( "tf_boss_alpha_stun_rocket_refle
 ConVar tf_boss_alpha_stun_rocket_reflect_duration( "tf_boss_alpha_stun_rocket_reflect_duration", "1"/*, FCVAR_CHEAT */ );
 
 ConVar tf_boss_alpha_debug_skill_shots( "tf_boss_alpha_debug_skill_shots", "0"/*, FCVAR_CHEAT */ );
-ConVar tf_boss_alpha_model_scale( "tf_boss_alpha_model_scale", "1.5"/*, FCVAR_CHEAT */ );
+ConVar tf_boss_alpha_model_scale( "tf_boss_alpha_model_scale", "4.0"/*, FCVAR_CHEAT */ );
 
 extern ConVar tf_boss_alpha_nuke_interval;
 
@@ -178,9 +178,9 @@ void CBossAlpha::Spawn( void )
 #ifdef USE_BOSS_SENTRY
 	SetModel( "models/bots/boss_sentry/boss_sentry.mdl" );
 #else
-	SetModel(g_szBotBossModels[3] );//"models/bots/knight/knight.mdl"
+	SetModel(g_szBotBossModels[4] );//"models/bots/knight/knight.mdl"
 #endif
-	SetModelScale(tf_boss_alpha_model_scale.GetFloat());
+	
 
 	m_conditionFlags = 0;
 
@@ -233,6 +233,8 @@ void CBossAlpha::Spawn( void )
 	Vector collideMins( -50, -50, 125 );
 	Vector collideMaxs( 50, 50, 260 );
 	CollisionProp()->SetCollisionBounds( collideMins, collideMaxs );
+
+	SetModelScale(tf_boss_alpha_model_scale.GetFloat());
 }
 
 

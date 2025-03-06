@@ -32,8 +32,8 @@ CRaidLogic *g_pRaidLogic = NULL;
 ConVar tf_debug_sniper_spots( "tf_debug_sniper_spots", "0"/*, FCVAR_CHEAT*/ );
 
 
-ConVar tf_raid_max_wanderers( "tf_raid_max_wanderers", "14"/*, FCVAR_CHEAT*/ );
-ConVar tf_raid_max_defense_engineers( "tf_raid_max_defense_engineers", "1"/*, FCVAR_CHEAT*/ );
+ConVar tf_raid_max_wanderers( "tf_raid_max_wanderers", "12"/*, FCVAR_CHEAT*/ );
+ConVar tf_raid_max_defense_engineers( "tf_raid_max_defense_engineers", "0"/*, FCVAR_CHEAT*/ );
 ConVar tf_raid_max_defense_demomen( "tf_raid_max_defense_demomen", "1"/*, FCVAR_CHEAT*/ );
 ConVar tf_raid_max_defense_heavies( "tf_raid_max_defense_heavies", "1"/*, FCVAR_CHEAT*/ );
 ConVar tf_raid_max_defense_soldiers( "tf_raid_max_defense_soldiers", "1"/*, FCVAR_CHEAT*/ );
