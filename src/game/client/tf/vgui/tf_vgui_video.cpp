@@ -43,6 +43,20 @@ CTFVideoPanel::~CTFVideoPanel()
 	ReleaseVideo();
 }
 
+void CTFVideoPanel::ReloadVideo(const char* pFilename)
+{
+	BaseClass::BeginPlayback(pFilename);
+}
+
+bool CTFVideoPanel::IsPlaying()
+{
+	if (m_VideoMaterial)
+	{
+		return m_VideoMaterial->IsVideoPlaying();
+	}
+	return false;
+}
+
 //-----------------------------------------------------------------------------
 // 
 //-----------------------------------------------------------------------------
@@ -85,6 +99,10 @@ void CTFVideoPanel::GetPanelPos( int &xpos, int &ypos )
 void CTFVideoPanel::OnVideoOver()
 {
 	BaseClass::OnVideoOver();
+	/*if (m_VideoMaterial && m_bLoop)
+	{
+		m_VideoMaterial->StartVideo();
+	}*/
 	PostMessage( GetParent(), new KeyValues( "IntroFinished" ) );
 }
 
@@ -122,6 +140,7 @@ bool CTFVideoPanel::BeginPlayback( const char *pFilename )
 
 	if ( m_VideoMaterial && m_bLoop )
 	{
+		
 		m_VideoMaterial->SetLooping( true );
 	}
 

@@ -6934,7 +6934,7 @@ void CTFPlayer::HandleCommand_JoinClass( const char *pClassName, bool bAllowSpaw
 			}
 		}
 		 
-		bool bCivilianOkay = false;
+		bool bCivilianOkay = true;
 
 		if ( !bCivilianOkay && ( i >= TF_LAST_NORMAL_CLASS ) )
 		{

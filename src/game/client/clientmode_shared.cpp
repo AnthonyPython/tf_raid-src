@@ -67,6 +67,8 @@ extern ConVar replay_rendersetting_renderglow;
 #include "c_tf_team.h"
 #endif
 
+
+
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -1030,6 +1032,7 @@ void ClientModeShared::FireGameEvent( IGameEvent *event )
 
 			hudChat->Printf( CHAT_FILTER_JOINLEAVE, "%s", szLocalized );
 		}
+		
 	}
 	else if ( Q_strcmp( "player_disconnect", eventname ) == 0 )
 	{

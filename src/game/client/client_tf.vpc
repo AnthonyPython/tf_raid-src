@@ -882,6 +882,16 @@ $Project "Client (TF)"
 				$File	"$SRCDIR\game\shared\tf\halloween\tf_weapon_spellbook.cpp"
 				$File	"$SRCDIR\game\shared\tf\halloween\tf_weapon_spellbook.h"
 			}
+			$Folder	"raid"
+			{
+				$Folder	"vgui"
+				{
+					$File	"raid\controls\raid_background_vgui_video.cpp"
+					$File	"raid\controls\raid_background_vgui_video.h"
+				}
+				
+				
+			}
 
 			$Folder	"Bot NPC"
 			{

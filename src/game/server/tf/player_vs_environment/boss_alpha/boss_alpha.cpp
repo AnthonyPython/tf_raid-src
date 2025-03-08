@@ -224,17 +224,19 @@ void CBossAlpha::Spawn( void )
 
 	TFGameRules()->AddActiveBoss( this );
 
-	// CollisionProp()->SetSurroundingBoundsType( USE_HITBOXES );
+	SetModelScale(tf_boss_alpha_model_scale.GetFloat());
 
-	Vector mins( -50, -50, 0 );
+	CollisionProp()->SetSurroundingBoundsType( USE_HITBOXES );
+
+	/*Vector mins(-50, -50, 0);
 	Vector maxs( 100, 100, 275 );
 	CollisionProp()->SetSurroundingBoundsType( USE_SPECIFIED_BOUNDS, &mins, &maxs );
 
 	Vector collideMins( -50, -50, 125 );
 	Vector collideMaxs( 50, 50, 260 );
-	CollisionProp()->SetCollisionBounds( collideMins, collideMaxs );
+	CollisionProp()->SetCollisionBounds( collideMins, collideMaxs );*/
 
-	SetModelScale(tf_boss_alpha_model_scale.GetFloat());
+	
 }
 
 

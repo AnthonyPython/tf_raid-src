@@ -43,6 +43,8 @@ class CLobbyContainerFrame_Comp;
 class CLobbyContainerFrame_MvM;
 class CLobbyContainerFrame_Casual;
 class CPvPRankPanel;
+//background video
+class CRDVideoPanel;
 
 enum mm_button_styles
 {
@@ -73,6 +75,9 @@ class CHudMainMenuOverride : public vgui::EditablePanel, public IViewPortPanel, 
 public:
 	CHudMainMenuOverride( IViewPort *pViewPort );
 	~CHudMainMenuOverride( void );
+
+	//background video
+	CRDVideoPanel* m_pVideoPanel;
 
 	void		 AttachToGameUI( void );
 	virtual const char *GetName( void ){ return PANEL_MAINMENUOVERRIDE; }

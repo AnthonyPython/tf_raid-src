@@ -64,6 +64,11 @@ ConVar item_debug_clientacks( "item_debug_clientacks", "0", FCVAR_CLIENTDLL | FC
 #endif
 #endif // _DEBUG
 
+CON_COMMAND_F(reload_schema, "Reload schema", FCVAR_GAMEDLL)
+{
+	ItemSystem()->PostInit();
+}
+
 // Result codes strings for GC results.
 const char* GCResultString[8] =
 {

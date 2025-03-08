@@ -65,6 +65,9 @@
 
 #include "c_tf_gamestats.h"
 
+//background video
+#include "raid/controls/raid_background_vgui_video.h"
+
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -145,6 +148,8 @@ CHudMainMenuOverride::CHudMainMenuOverride( IViewPort *pViewPort ) : BaseClass( 
 	// We don't want the gameui to delete us, or things get messy
 	SetAutoDelete( false );
 	SetVisible( true );
+	//Background video
+	m_pVideoPanel = NULL;
 
 	m_pVRModeButton = NULL;
 	m_pVRModeBackground = NULL;
@@ -273,6 +278,13 @@ CHudMainMenuOverride::~CHudMainMenuOverride( void )
 		g_pClientMode->GetViewportAnimationController()->CancelAnimationsForPanel( m_pNotificationsShowPanel );
 	}
 
+	if (m_pVideoPanel)
+	{
+		m_pVideoPanel->Shutdown();
+		m_pVideoPanel->MarkForDeletion();
+		m_pVideoPanel = NULL;
+	}
+
 	vgui::ivgui()->RemoveTickSignal( GetVPanel() );
 }
 
@@ -303,6 +315,16 @@ void CHudMainMenuOverride::OnTick()
 	{
 		AdjustNotificationsPanelHeight();
 	}
+
+	/*if (m_pVideoPanel && m_pVideoPanel->IsVisible())
+	{
+		m_pVideoPanel->StartVideo();
+	}
+
+	if (m_pVideoPanel && !m_pVideoPanel->IsVisible())
+	{
+		m_pVideoPanel->StopVideo();
+	}*/
 
 	static bool s_bRanOnce = false;
 	if ( !s_bRanOnce )
@@ -524,7 +546,16 @@ void CHudMainMenuOverride::ApplySchemeSettings( IScheme *scheme )
 	{
 		pConditions->deleteThis();
 	}
+	m_pVideoPanel = dynamic_cast<CRDVideoPanel*>(FindChildByName("Background_video"));
 
+	if (m_pVideoPanel)
+	{
+		m_pVideoPanel->SetLoop(true);
+		m_pVideoPanel->PlayVideo();
+		m_pVideoPanel->SetVisible(true);
+		
+	}
+	
 	m_pQuitButton = dynamic_cast<CExButton*>( FindChildByName("QuitButton") );
 	m_pDisconnectButton = dynamic_cast<CExButton*>( FindChildByName("DisconnectButton") );
 	m_pBackToReplaysButton = dynamic_cast<CExButton*>( FindChildByName("BackToReplaysButton") );
@@ -995,6 +1026,8 @@ void CHudMainMenuOverride::OnUpdateMenu( void )
 		{
 			m_pCharacterImagePanel->SetVisible( false );
 		}
+
+		
 	}
 	else if ( !bInGame && !bInReplay )
 	{
@@ -1002,6 +1035,8 @@ void CHudMainMenuOverride::OnUpdateMenu( void )
 		{
 			m_pCharacterImagePanel->SetVisible( m_bBackgroundUsesCharacterImages );
 		}
+
+	
 	}
 
 	// Position the entries
@@ -1101,7 +1136,15 @@ void CHudMainMenuOverride::OnUpdateMenu( void )
 				}
 			}
 		}
+
 	}
+
+	
+	/*if (m_pVideoPanel && !m_pVideoPanel->IsPlaying())
+	{
+		m_pVideoPanel->PlayVideo();
+
+	}*/
 
 	if ( bSomethingChanged )
 	{
@@ -1740,7 +1783,11 @@ bool CHudMainMenuOverride::IsVisible( void )
 		return GetClientModeTFNormal()->GameUI()->IsMainMenuVisible();
 	return BaseClass::IsVisible();
 	*/
-	return true;
+
+	if (GetClientModeTFNormal()->GameUI() )
+		return GetClientModeTFNormal()->GameUI()->IsMainMenuVisible();
+	return BaseClass::IsVisible();
+	//return true;
 }
 
 //-----------------------------------------------------------------------------
