@@ -98,9 +98,6 @@
 #include "steam/isteamtimeline.h"
 #endif
 
-//Back ground video panel
-#include "raid/controls/raid_background_vgui_video.h"
-
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -725,11 +722,11 @@ void ClientModeTFNormal::FireGameEvent( IGameEvent *event )
 #endif
 
 		// Hack, Hack, Hack, all day long, - Hack, Hack, Hack, while I sing this Hacking song -AnthonyH
-		CRDVideoPanel* pPanel = (CRDVideoPanel*)gViewPortInterface->FindPanelByName(PANEL_BKVIDEO);
-		if (pPanel)
-		{
-			pPanel->PlayVideo();
-		}
+		//CRDVideoPanel* pPanel = (CRDVideoPanel*)gViewPortInterface->FindPanelByName(PANEL_BKVIDEO);
+		//if (pPanel)
+		//{
+		//	pPanel->PlayVideo();
+		//}
 	}
 	else if ( FStrEq( "server_cvar", eventname ) )
 	{
@@ -1422,13 +1419,7 @@ void ClientModeTFNormal::FireGameEvent( IGameEvent *event )
 		m_bRestrictInfoPanel = pchSource && ( FStrEq( "matchmaking", pchSource ) || !Q_strncmp( pchSource, "quickplay_", 10 ) );
 
 		m_bInfoPanelShown = false;
-		// Hack, Hack, Hack, all day long, - Hack, Hack, Hack, while I sing this Hacking song -AnthonyH
-		CRDVideoPanel* pPanel = (CRDVideoPanel*)gViewPortInterface->FindPanelByName(PANEL_BKVIDEO);
-		if (pPanel)
-		{
-			if(pPanel->IsPlaying())
-				pPanel->StopVideo();
-		}
+	
 	}
 	else if ( FStrEq( "player_teleported", eventname ) )
 	{
@@ -1976,62 +1967,6 @@ void ClientModeTFNormal::Update()
 		// @note Tom Bui: we want this thing to always run, so we get animations at the main menu
 		g_pClientMode->GetViewportAnimationController()->UpdateAnimations( gpGlobals->curtime );
 	}
-	
-	if (GameUI()->IsMainMenuVisible())
-	{
-		
-		CRDVideoPanel* pBKPanel = NULL;//(CRDVideoPanel*)gViewPortInterface->FindPanelByName(PANEL_BKVIDEO);
-
-
-		IViewPortPanel* pMMOverride = (gViewPortInterface->FindPanelByName(PANEL_MAINMENUOVERRIDE));
-		if (pMMOverride)
-		{
-			CHudMainMenuOverride*  MainMenu = ((CHudMainMenuOverride*)pMMOverride);
-
-			pBKPanel = MainMenu->m_pVideoPanel;
-
-			// Hack, Hack, Hack, all day long, - Hack, Hack, Hack, while I sing this Hacking song -AnthonyH
-
-			if (pBKPanel)
-			{
-				if (!pBKPanel->IsPlaying() || !pBKPanel->IsVideoValid())
-				{
-					pBKPanel->PlayVideo();
-				}
-
-			}
-
-
-		}
-
-		
-	}
-	//Because isMainMenuVisible is so unreliable we can't just assume we aren't in the menu at all times Technically 
-	// but this does mean the video is contantly trying to be played while even when we aren't in the menu sometimes.
-	/*else
-	{
-		CRDVideoPanel* pBKPanel = NULL;//(CRDVideoPanel*)gViewPortInterface->FindPanelByName(PANEL_BKVIDEO);
-
-		IViewPortPanel* pMMOverride = (gViewPortInterface->FindPanelByName(PANEL_MAINMENUOVERRIDE));
-		if (pMMOverride)
-		{
-			CHudMainMenuOverride* MainMenu = ((CHudMainMenuOverride*)pMMOverride);
-
-			pBKPanel = MainMenu->m_pVideoPanel;
-
-			// Hack, Hack, Hack, all day long, - Hack, Hack, Hack, while I sing this Hacking song -AnthonyH
-
-			if (pBKPanel)
-			{
-				if (pBKPanel->IsPlaying())
-					pBKPanel->StopVideo();
-			}
-
-
-		}
-
-		
-	}*/
 
 	if ( !engine->IsConnected() )
 	{

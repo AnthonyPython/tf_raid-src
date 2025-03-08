@@ -1027,6 +1027,15 @@ void CHudMainMenuOverride::OnUpdateMenu( void )
 			m_pCharacterImagePanel->SetVisible( false );
 		}
 
+		if (m_pVideoPanel && m_pVideoPanel->IsVisible())
+		{
+			m_pVideoPanel->SetVisible(false);
+			if (m_pVideoPanel->IsPlaying() )
+			{
+				m_pVideoPanel->StopVideo();
+				m_pVideoPanel->Shutdown();
+			}
+		}
 		
 	}
 	else if ( !bInGame && !bInReplay )
@@ -1034,6 +1043,15 @@ void CHudMainMenuOverride::OnUpdateMenu( void )
 		if ( !m_pCharacterImagePanel->IsVisible() )
 		{
 			m_pCharacterImagePanel->SetVisible( m_bBackgroundUsesCharacterImages );
+		}
+
+		if (m_pVideoPanel && !m_pVideoPanel->IsVisible())
+		{
+			m_pVideoPanel->SetVisible(true);
+			if ((!m_pVideoPanel->IsPlaying() || !m_pVideoPanel->IsVideoValid()))
+			{
+				m_pVideoPanel->PlayVideo();
+			}
 		}
 
 	
@@ -1120,6 +1138,10 @@ void CHudMainMenuOverride::OnUpdateMenu( void )
 		}
 
 		bool bShouldBeVisible = bInGame == false;
+		if (m_pVideoPanel)
+		{
+			bShouldBeVisible = false;
+		}
 		if ( m_pBackground->IsVisible() != bShouldBeVisible )
 		{
 			m_pBackground->SetVisible( bShouldBeVisible );
@@ -1140,11 +1162,7 @@ void CHudMainMenuOverride::OnUpdateMenu( void )
 	}
 
 	
-	/*if (m_pVideoPanel && !m_pVideoPanel->IsPlaying())
-	{
-		m_pVideoPanel->PlayVideo();
-
-	}*/
+	
 
 	if ( bSomethingChanged )
 	{

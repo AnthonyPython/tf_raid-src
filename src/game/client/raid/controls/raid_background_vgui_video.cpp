@@ -172,6 +172,14 @@ void CRDVideoPanel::OnVideoOver()
 	//PostMessage( GetParent(), new KeyValues( "IntroFinished" ) );
 }
 
+void CRDVideoPanel::Paint(void)
+{
+	if (engine->IsConnected())
+		return;
+
+	BaseClass::Paint();
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------

@@ -30,6 +30,8 @@ public:
 	float GetStartDelay(){ return m_flStartAnimDelay; }
 	float GetEndDelay(){ return m_flEndAnimDelay; }
 
+	virtual void Paint(void);
+
 	virtual bool BeginPlayback( const char *pFilename ) OVERRIDE;
 
 	void SetLoop(bool loop) { m_bLoop = loop; }
